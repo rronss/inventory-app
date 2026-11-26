@@ -6,7 +6,8 @@ import EditProfile from './EditProfile.jsx'
 import Person from './Person.jsx'
 import SecuritySettings from './SecuritySettings.jsx'
 
-export default function Profile({ tab, user, onChanged, onSignOut, onExpired }) {
+// "Profile" is your record; "Settings" is where you change it.
+export default function Profile({ page, tab, user, onChanged, onExpired }) {
   const [message, setMessage] = useState(null)
 
   const clear = () => setMessage(null)
@@ -33,13 +34,15 @@ export default function Profile({ tab, user, onChanged, onSignOut, onExpired }) 
   return (
     <>
       <div className="page-head">
-        <h1>Profile</h1>
-        <button type="button" className="tool" onClick={onSignOut}>
-          Sign out
-        </button>
+        <h1>{page === 'settings' ? 'Settings' : 'Profile'}</h1>
+        {page !== 'settings' && (
+          <a className="tool" href="#/settings">
+            Edit
+          </a>
+        )}
       </div>
 
-      {tab !== 'edit' && tab !== 'security' ? (
+      {page !== 'settings' ? (
         <Person id={user.id} user={user} onExpired={onExpired} />
       ) : (
         <>

@@ -47,13 +47,6 @@ export default function Person({ id, user, onExpired }) {
           ))}
         </dl>
       </section>
-      {isMe && (
-        <p>
-          <a className="tool" href="#/profile/edit">
-            Edit profile
-          </a>
-        </p>
-      )}
 
       {user.role === 'admin' && !isMe && (
         <AccountControls id={id} handle={handle} onRole={(role) => setPerson({ ...person, role })} />

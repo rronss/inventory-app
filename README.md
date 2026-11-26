@@ -16,15 +16,18 @@ Open http://localhost:8200 and log in with the admin from your `.env`.
 ## Pages
 
 - **Homepage:** what the app does, with **Sign in** and **Register** tabs on top.
-- **Home:** totals and what needs reordering.
-- **Inventory:** two tabs. **Items**, one line per item, with a **New** button, a search box, a low-stock filter and, for
-  admins, **Select** to remove several at once (a pop-up asks first); **Movements**, every stock change newest first.
+- **Home** (signed in): the homepage, with buttons to the inventory and the overview.
+- **Inventory:** three tabs. **Items**, one line per item, with a **New** button, a search box, a low-stock filter
+  and, for admins, **Select** to remove several at once (a pop-up asks first); **Movements**, every stock change newest
+  first; **Overview**, totals and what needs reordering (also behind the **Inventory** title).
 - **Item profile:** every item has an ID and its own page, laid out like a shop's product page: picture slideshow, stock in and
   out, product details, description and stock history (the history folds away). **Edit** opens a page to change the name, SKU, reorder level,
   description and images, with a separate Privacy section for admins.
-- **Profile:** three tabs, **My profile** (how your profile reads), **Edit profile** (rows for name, bio and photo) and
-  **Privacy & Security** (rows for password, email and username, and
-  what others can see about you), with **Sign out** on all three.
+- **Profile icon** (right of the top bar): opens **Profile** and **Settings**, and below them **Admin** (admins) and
+  **Log out**.
+- **Profile:** your record and the items you added.
+- **Settings:** two tabs, **Profile Settings** (rows for name, bio and photo) and **Privacy & Security** (rows for
+  password, email and username, and what others can see about you).
 - **People:** a person's record shows photo, name, username, role, bio and the items they added, so colleagues can
   recognise them. Open it from a username in the history or, for admins, from **Admin > Users**.
 - **Admin** (admins only): two tabs, **Users** (who has an account) and **Staff** (add a staff account). On someone

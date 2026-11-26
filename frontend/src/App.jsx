@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 import Admin from './Admin.jsx'
 import { api, getToken, setToken } from './api.js'
+import Dashboard from './Dashboard.jsx'
 import Home from './Home.jsx'
 import Inventory from './Inventory.jsx'
 import Item from './Item.jsx'
@@ -10,21 +11,24 @@ import Movements from './Movements.jsx'
 import Person from './Person.jsx'
 import Landing from './Landing.jsx'
 import Profile from './Profile.jsx'
+import UserMenu from './UserMenu.jsx'
 
-const PAGES = { home: 'Home', inventory: 'Inventory', profile: 'Profile', admin: 'Admin' }
+const PAGES = { home: 'Home', inventory: 'Inventory', profile: 'Profile', settings: 'Settings', admin: 'Admin' }
+// The rest are reached from the profile icon.
+const IN_TOP_BAR = ['home', 'inventory']
 // The second row of tabs, for the pages that have one.
 const SUBTABS = {
   inventory: [
     ['', 'Items'],
     ['movements', 'Movements'],
+    ['overview', 'Overview'],
   ],
   admin: [
     ['', 'Users'],
     ['staff', 'Staff'],
   ],
-  profile: [
-    ['', 'My profile'],
-    ['edit', 'Edit profile'],
+  settings: [
+    ['', 'Profile Settings'],
     ['security', 'Privacy & Security'],
   ],
 }
@@ -94,16 +98,19 @@ export default function App() {
   return (
     <>
       <header className="topbar">
-        <a className="brand" href="#/home">
+        <a className="brand" href="#/inventory/overview">
           Inventory
         </a>
         <nav>
-          {visible.map(([key, label]) => (
-            <a key={key} href={`#/${key}`} aria-current={active === key ? 'page' : undefined}>
-              {label}
-            </a>
-          ))}
+          {visible
+            .filter(([key]) => IN_TOP_BAR.includes(key))
+            .map(([key, label]) => (
+              <a key={key} href={`#/${key}`} aria-current={active === key ? 'page' : undefined}>
+                {label}
+              </a>
+            ))}
         </nav>
+        <UserMenu user={user} current={active} onSignOut={logOut} />
       </header>
       {SUBTABS[active] && (
         <nav className="subtabs" aria-label={PAGES[active]}>
@@ -114,11 +121,13 @@ export default function App() {
           ))}
         </nav>
       )}
+      {active === 'home' && <Home />}
       <main>
-        {active === 'home' && <Home {...props} />}
         {active === 'inventory' &&
           (tab === 'movements' ? (
             <Movements {...props} />
+          ) : tab === 'overview' ? (
+            <Dashboard {...props} />
           ) : tab !== 'item' ? (
             <Inventory key={tab} tab={tab} {...props} />
           ) : action === 'edit' ? (
@@ -126,7 +135,9 @@ export default function App() {
           ) : (
             <Item key={itemId} id={itemId} {...props} />
           ))}
-        {active === 'profile' && <Profile key={tab} tab={tab} {...props} onChanged={loadUser} onSignOut={logOut} />}
+        {(active === 'profile' || active === 'settings') && (
+          <Profile key={`${active}/${tab}`} page={active} tab={tab} {...props} onChanged={loadUser} />
+        )}
         {active === 'admin' && <Admin key={tab} tab={tab} {...props} />}
         {person && <Person key={tab} id={tab} {...props} />}
       </main>

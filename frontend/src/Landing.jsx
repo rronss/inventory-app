@@ -1,3 +1,4 @@
+import Hero from './Hero.jsx'
 import Login from './Login.jsx'
 import Register from './Register.jsx'
 
@@ -6,12 +7,6 @@ const TABS = [
   ['signin', 'Sign in'],
   ['register', 'Register'],
 ]
-const FEATURES = [
-  ['Know what you have', 'Every item with its quantity, and a clear mark on what needs reordering.'],
-  ['See each item', 'Every item has its own page with pictures, a description and its stock.'],
-  ['Keep the history', 'Each stock movement is recorded with the person who made it.'],
-]
-
 // The signed-out site: a bar of tabs on top, and the chosen tab below it.
 export default function Landing({ page, onSignedIn }) {
   const active = TABS.some(([key]) => key === page) ? page : ''
@@ -42,28 +37,14 @@ export default function Landing({ page, onSignedIn }) {
         </div>
       )}
       {active === '' && (
-        <>
-          <section className="hero">
-            <h1>Your stock, in one place.</h1>
-            <p className="lead">A simple way for a team to track its items and quantities.</p>
-            <p className="actions">
-              <a className="button" href="#/register">
-                Create an account
-              </a>
-              <a className="button ghost" href="#/signin">
-                Sign in
-              </a>
-            </p>
-          </section>
-          <section className="features">
-            {FEATURES.map(([title, text]) => (
-              <article key={title} className="card">
-                <h2>{title}</h2>
-                <p className="hint">{text}</p>
-              </article>
-            ))}
-          </section>
-        </>
+        <Hero>
+          <a className="button" href="#/register">
+            Create an account
+          </a>
+          <a className="button ghost" href="#/signin">
+            Sign in
+          </a>
+        </Hero>
       )}
     </>
   )

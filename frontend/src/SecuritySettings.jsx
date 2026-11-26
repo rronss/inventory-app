@@ -65,7 +65,7 @@ export default function SecuritySettings({ user, save, notice, onSwitch }) {
           <li>Your username appears next to every stock change you make.</li>
           <li>Admins can see a log of your sign-ins and the changes you make.</li>
           <li>Your email is only for signing in. It is never shown to anyone.</li>
-          <li>Your sign-in ends when you sign out, close the tab, or after an hour.</li>
+          <li>Your sign-in ends when you log out, close the tab, or after an hour.</li>
         </ul>
       </section>
     </>
