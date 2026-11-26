@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, String, func
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, LargeBinary, String, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .db import Base
@@ -38,13 +38,32 @@ class Item(Base):
     name: Mapped[str] = mapped_column(String(120))
     quantity: Mapped[int] = mapped_column(default=0)
     reorder_level: Mapped[int] = mapped_column(default=0)
-    # The user this item is attached to, if any.
-    owner_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), default=None, index=True)
-    owner: Mapped[User | None] = relationship(lazy="joined")
+    description: Mapped[str] = mapped_column(String(1000), default="")
+    # Private parts are shown to admins only. The two are chosen separately.
+    stock_private: Mapped[bool] = mapped_column(default=False)  # quantity, reorder level, status
+    history_private: Mapped[bool] = mapped_column(default=False)  # the movements
+    images: Mapped[list["ItemImage"]] = relationship(
+        lazy="selectin", order_by="ItemImage.id", cascade="all, delete-orphan"
+    )
 
     @property
     def low_stock(self) -> bool:
         return self.quantity <= self.reorder_level
+
+    @property
+    def image_ids(self) -> list[int]:
+        return [image.id for image in self.images]
+
+
+class ItemImage(Base):
+    """A picture of an item. The bytes are read only when the picture itself is asked for."""
+
+    __tablename__ = "item_images"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    item_id: Mapped[int] = mapped_column(ForeignKey("items.id"), index=True)
+    content_type: Mapped[str] = mapped_column(String(20))
+    data: Mapped[bytes] = mapped_column(LargeBinary, deferred=True)
 
 
 class Movement(Base):
@@ -57,7 +76,12 @@ class Movement(Base):
     note: Mapped[str] = mapped_column(String(200), default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     user: Mapped[User] = relationship(lazy="joined")
+    item: Mapped[Item] = relationship()
 
     @property
     def username(self) -> str:
         return self.user.username
+
+    @property
+    def item_name(self) -> str:
+        return self.item.name

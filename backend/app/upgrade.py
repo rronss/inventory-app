@@ -3,7 +3,11 @@ from sqlalchemy import inspect, text
 
 COLUMNS = {
     "users": {"name": "VARCHAR(80) NOT NULL DEFAULT ''", "username": "VARCHAR(30) NOT NULL DEFAULT ''"},
-    "items": {"owner_id": "INTEGER REFERENCES users(id)"},
+    "items": {
+        "description": "VARCHAR(1000) NOT NULL DEFAULT ''",
+        "stock_private": "BOOLEAN NOT NULL DEFAULT FALSE",
+        "history_private": "BOOLEAN NOT NULL DEFAULT FALSE",
+    },
 }
 
 

@@ -23,16 +23,15 @@ export default function useItems(query, onExpired) {
 
   async function send(path, options, form) {
     setError('')
-    let done = false
+    let result = null
     try {
-      await api(path, { method: 'POST', ...options })
+      result = await api(path, { method: 'POST', ...options })
       form?.reset()
-      done = true
     } catch (err) {
       handle(err)
     }
     await refresh()
-    return done
+    return result
   }
 
   return { items, error, send }

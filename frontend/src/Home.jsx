@@ -4,12 +4,10 @@ import useItems from './useItems.js'
 export default function Home({ user, onExpired }) {
   const { items, error } = useItems('', onExpired)
   const low = items.filter((item) => item.low_stock)
-  const mine = items.filter((item) => item.owner?.id === user.id)
 
   const stats = [
     ['Items', items.length, '#/inventory'],
     ['Low stock', low.length, '#/inventory'],
-    ['Attached to me', mine.length, '#/profile'],
   ]
 
   return (

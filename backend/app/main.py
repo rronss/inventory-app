@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from sqlalchemy import select
 
-from . import auth, items
+from . import auth, images, items
 from .config import get_settings
 from .db import Base, get_engine, new_session
 from .models import ADMIN, User
@@ -34,6 +34,8 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Inventory", lifespan=lifespan)
 app.include_router(auth.router)
 app.include_router(items.router)
+app.include_router(items.movements_router)
+app.include_router(images.router)
 
 
 @app.get("/health")

@@ -17,11 +17,6 @@ def test_admin_adds_an_item_and_staff_can_see_it(client, widget, as_staff):
     assert [i["sku"] for i in client.get("/api/items", headers=as_staff).json()] == ["W-1"]
 
 
-def test_a_new_item_is_attached_to_whoever_adds_it(client, as_staff, staff):
-    created = client.post("/api/items", json=WIDGET, headers=as_staff)
-    assert created.status_code == 201 and created.json()["owner"]["id"] == staff.id
-
-
 def test_sku_is_unique(client, widget, as_admin):
     assert client.post("/api/items", json=WIDGET, headers=as_admin).status_code == 409
 
@@ -76,3 +71,26 @@ def test_the_history_names_who_moved_the_stock(client, widget, as_staff):
     move(client, as_staff, widget, -2, "sent to the lab")
     entry = client.get(f"/api/items/{widget['id']}/movements", headers=as_staff).json()[0]
     assert (entry["username"], entry["change"], entry["note"]) == ("staff", -2, "sent to the lab")
+
+
+def test_all_movements_newest_first_across_items(client, widget, as_staff, as_admin):
+    gadget = client.post("/api/items", json={**WIDGET, "sku": "G-1", "name": "Gadget"}, headers=as_admin).json()
+    move(client, as_staff, widget, 5, "delivery")
+    move(client, as_admin, gadget, -2)
+    move(client, as_staff, widget, -1)
+    rows = client.get("/api/movements", headers=as_staff).json()
+    assert [(r["item_name"], r["change"], r["username"]) for r in rows] == [
+        ("Widget", -1, "staff"),
+        ("Gadget", -2, "admin"),
+        ("Widget", 5, "staff"),
+    ]
+    assert rows[1]["item_id"] == gadget["id"]
+    newest = client.get("/api/movements?limit=2", headers=as_staff).json()
+    older = client.get(f"/api/movements?limit=2&before={newest[-1]['id']}", headers=as_staff).json()
+    assert [r["change"] for r in newest + older] == [-1, -2, 5]
+
+
+def test_the_movement_list_needs_a_sign_in_and_a_sane_limit(client, as_staff):
+    assert client.get("/api/movements").status_code == 401
+    assert client.get("/api/movements?limit=1000", headers=as_staff).status_code == 422
+

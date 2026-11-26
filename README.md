@@ -1,7 +1,7 @@
 # Inventory
 
 A small stock-keeping app: log in, see what is in stock, record stock coming in and going out, spot what needs
-reordering, and see who is responsible for each item. FastAPI, PostgreSQL and React. Accounts and inventory live in the
+reordering, and keep a page for each item. FastAPI, PostgreSQL and React. Accounts and inventory live in the
 database.
 
 ## Run it
@@ -16,10 +16,12 @@ Open http://localhost:8200 and log in with the admin from your `.env`.
 ## Pages
 
 - **Homepage:** what the app does, with **Sign in** and **Register** tabs on top.
-- **Home:** totals, what needs reordering, and how many items are attached to you.
-- **Inventory:** two tabs. **Items** to record stock in and out and attach or detach items; **Add an item**.
-- **Item profile:** every item has an ID and its own page: stock, who it is attached to and its movement history.
-- **My profile:** your attached items, your name, username and password.
+- **Home:** totals and what needs reordering.
+- **Inventory:** three tabs. **Items**, one line per item; **Movements**, every stock change newest first; **Add an item**.
+- **Item profile:** every item has an ID and its own page, laid out like a shop's product page: picture slideshow, stock in and
+  out, product details, description and stock history (the history folds away). **Edit** opens a page to change the name, SKU, reorder level,
+  description and images, with a separate Privacy section for admins.
+- **My profile:** your name, username and password.
 - **Users** (admin): see accounts and create staff accounts.
 
 **Sign out** is in the top bar on every page.
@@ -30,9 +32,12 @@ Open http://localhost:8200 and log in with the admin from your `.env`.
 - Every account has a unique username, which is what other people see. Email addresses are used to sign in
   and are never shown or sent back by the API. You can sign in with the username or the email.
 - The first admin's username is `admin`.
-- Anyone logged in can add an item; it is attached to them. Anyone logged in can record stock movements.
-- An unattached item can be claimed by anyone. Only its owner or an admin can detach it; only an admin can assign it
-  to someone else.
+- An item can have a description and up to 5 images (PNG, JPEG or WebP, 2 MB each, kept in the database), shown as a
+  slideshow. Anyone logged in can change them.
+- Anyone logged in can add an item and record stock movements.
+- An admin can make two things private per item, separately. **Stock** (quantity, status, reorder level): other users
+  get none of it from any endpoint and cannot move that item's stock. **Stock history**: other users cannot read its
+  movements. SKU, ID and description are always visible to a signed-in user.
 - Stock never goes below zero, even when two people remove it at the same moment.
 - An item is "low" when its quantity is at or below its reorder level.
 - Every movement is recorded with who made it.
@@ -45,10 +50,11 @@ Open http://localhost:8200 and log in with the admin from your `.env`.
 | `GET /api/auth/me` | the logged-in user |
 | `PATCH /api/auth/me`, `POST /api/auth/password` | the logged-in user, for themselves |
 | `GET /api/users`, `POST /api/users` | admin |
-| `GET /api/items` (`?low=true`, `?mine=true`), `GET /api/items/{id}`, `GET /api/items/{id}/movements` | logged in |
+| `GET /api/movements` (`?limit=`, `?before=`) | logged in |
+| `GET /api/items` (`?low=true`), `GET /api/items/{id}`, `GET /api/items/{id}/movements` | logged in |
 | `POST /api/items`, `POST /api/items/{id}/movements` | logged in |
-| `POST /api/items/{id}/attach`, `POST /api/items/{id}/detach` | logged in, within the rules above |
-| `PUT /api/items/{id}/owner` | admin |
+| `PATCH /api/items/{id}` (name, SKU, reorder level, description; `stock_private` and `history_private` admin only), `POST /api/items/{id}/images`, `DELETE /api/items/{id}/images/{image}` | logged in |
+| `GET /api/items/{id}/images/{image}` | logged in |
 
 ## Develop
 
@@ -65,6 +71,16 @@ The dev server runs on http://localhost:5180 and forwards `/api` to a backend on
 ```bash
 cd backend && SECRET_KEY=$(openssl rand -hex 32) ADMIN_EMAIL=you@example.com ADMIN_PASSWORD=choose-one uvicorn app.main:app --port 8100
 ```
+
+## Sample data
+
+Three sample items with descriptions and pictures, loaded into a running app:
+
+```bash
+set -a && . ./.env && set +a && python3 sample-data/load.py
+```
+
+The pictures are drawn by `sample-data/draw.py` (needs Pillow).
 
 ## CI
 

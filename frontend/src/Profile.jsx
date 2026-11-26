@@ -1,12 +1,9 @@
 import { useState } from 'react'
 
 import { api } from './api.js'
-import { itemLink } from './itemControls.jsx'
-import useItems from './useItems.js'
 import { usernameRule } from './username.js'
 
 export default function Profile({ user, onChanged, onExpired }) {
-  const { items, error, send } = useItems('?mine=true', onExpired)
   const [message, setMessage] = useState(null)
 
   async function submit(event, path, method, body, done) {
@@ -33,31 +30,6 @@ export default function Profile({ user, onChanged, onExpired }) {
         {user.username} · {user.role}
       </p>
       {message && <p className={message.ok ? 'ok' : 'error'}>{message.text}</p>}
-
-      <section className="card">
-        <h2>Items attached to me</h2>
-        {error && <p className="error">{error}</p>}
-        {items.length === 0 && (
-          <p className="hint">
-            Nothing yet. Attach an item from the <a href="#/inventory">inventory</a>, or add a new one.
-          </p>
-        )}
-        <ul className="list">
-          {items.map((item) => (
-            <li key={item.id}>
-              <span>
-                <a href={itemLink(item)}>{item.name}</a> <small>{item.sku}</small>
-              </span>
-              <span>
-                {item.quantity} in stock
-                <button className="link" onClick={() => send(`/items/${item.id}/detach`)}>
-                  Detach
-                </button>
-              </span>
-            </li>
-          ))}
-        </ul>
-      </section>
 
       <form
         key={`${user.name}|${user.username}`}

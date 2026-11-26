@@ -55,31 +55,37 @@ class PasswordIn(BaseModel):
     new_password: str = Field(min_length=8, max_length=72)
 
 
-class OwnerOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    username: str
-    name: str
-
-
-class AssignIn(BaseModel):
-    user_id: int | None
-
-
 class ItemIn(BaseModel):
     sku: str = Field(min_length=1, max_length=40)
     name: str = Field(min_length=1, max_length=120)
     quantity: int = Field(default=0, ge=0, le=1_000_000)
     reorder_level: int = Field(default=0, ge=0, le=1_000_000)
+    description: str = Field(default="", max_length=1000)
+
+
+class ItemEditIn(BaseModel):
+    """Fields left out stay as they are. There is no quantity: stock changes only through movements."""
+
+    sku: str | None = Field(default=None, min_length=1, max_length=40)
+    name: str | None = Field(default=None, min_length=1, max_length=120)
+    reorder_level: int | None = Field(default=None, ge=0, le=1_000_000)
+    description: str | None = Field(default=None, max_length=1000)
+    stock_private: bool | None = None  # admin only
+    history_private: bool | None = None  # admin only
 
 
 class ItemOut(ItemIn):
+    """quantity, reorder_level and low_stock are null when they are private and the reader is not an admin."""
+
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    low_stock: bool
-    owner: OwnerOut | None
+    quantity: int | None
+    reorder_level: int | None
+    low_stock: bool | None
+    stock_private: bool
+    history_private: bool
+    image_ids: list[int]
 
 
 class MovementIn(BaseModel):
@@ -103,3 +109,8 @@ class MovementOut(BaseModel):
     user_id: int
     username: str
     created_at: datetime
+
+
+class RecentMovementOut(MovementOut):
+    item_id: int
+    item_name: str

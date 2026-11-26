@@ -8,7 +8,7 @@ const TABS = [
 ]
 const FEATURES = [
   ['Know what you have', 'Every item with its quantity, and a clear mark on what needs reordering.'],
-  ['See who holds what', 'Attach items to your profile, so nothing goes missing without a name next to it.'],
+  ['See each item', 'Every item has its own page with pictures, a description and its stock.'],
   ['Keep the history', 'Each stock movement is recorded with the person who made it.'],
 ]
 
@@ -45,7 +45,7 @@ export default function Landing({ page, onSignedIn }) {
         <>
           <section className="hero">
             <h1>Your stock, in one place.</h1>
-            <p className="lead">A simple way for a team to track items, quantities and who is responsible for them.</p>
+            <p className="lead">A simple way for a team to track its items and quantities.</p>
             <p className="actions">
               <a className="button" href="#/register">
                 Create an account

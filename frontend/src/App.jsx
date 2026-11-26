@@ -4,6 +4,8 @@ import { api, getToken, setToken } from './api.js'
 import Home from './Home.jsx'
 import Inventory from './Inventory.jsx'
 import Item from './Item.jsx'
+import ItemEdit from './ItemEdit.jsx'
+import Movements from './Movements.jsx'
 import Landing from './Landing.jsx'
 import Profile from './Profile.jsx'
 import Users from './Users.jsx'
@@ -11,6 +13,7 @@ import Users from './Users.jsx'
 const PAGES = { home: 'Home', inventory: 'Inventory', profile: 'My profile', users: 'Users' }
 const INVENTORY_TABS = [
   ['', 'Items'],
+  ['movements', 'Movements'],
   ['add', 'Add an item'],
 ]
 const currentPage = () => window.location.hash.replace(/^#\/?/, '')
@@ -18,6 +21,7 @@ const currentPage = () => window.location.hash.replace(/^#\/?/, '')
 export default function App() {
   const [user, setUser] = useState(null)
   const [checking, setChecking] = useState(Boolean(getToken()))
+  const [offline, setOffline] = useState(false)
   const [page, setPage] = useState(currentPage)
 
   useEffect(() => {
@@ -35,9 +39,12 @@ export default function App() {
   const loadUser = useCallback(async () => {
     try {
       setUser(await api('/auth/me'))
+      setOffline(false)
       if (['', 'signin', 'register'].includes(currentPage())) window.location.hash = '/home'
-    } catch {
-      logOut()
+    } catch (err) {
+      // Only a refused token signs you out. A server that is restarting or unreachable does not.
+      if (err.status === 401) logOut()
+      else setOffline(true)
     } finally {
       setChecking(false)
     }
@@ -48,12 +55,23 @@ export default function App() {
   }, [loadUser])
 
   if (checking) return <p className="loading">Loading…</p>
+  if (!user && offline && getToken()) {
+    return (
+      <p className="loading">
+        The server can't be reached.
+        <button className="link" onClick={loadUser}>
+          Try again
+        </button>
+      </p>
+    )
+  }
   if (!user) return <Landing page={page} onSignedIn={loadUser} />
 
   const isAdmin = user.role === 'admin'
   const visible = Object.entries(PAGES).filter(([key]) => key !== 'users' || isAdmin)
-  // "inventory/add" is the second tab of the inventory page; "inventory/item/3" is one item's profile.
-  const [section, tab = '', itemId] = page.split('/')
+  // "inventory/add" is the second tab of the inventory page; "inventory/item/3" is one item's profile
+  // and "inventory/item/3/edit" changes it.
+  const [section, tab = '', itemId, action] = page.split('/')
   const active = visible.some(([key]) => key === section) ? section : 'home'
   const props = { user, onExpired: logOut }
 
@@ -86,7 +104,15 @@ export default function App() {
       <main>
         {active === 'home' && <Home {...props} />}
         {active === 'inventory' &&
-          (tab === 'item' ? <Item key={itemId} id={itemId} {...props} /> : <Inventory key={tab} tab={tab} {...props} />)}
+          (tab === 'movements' ? (
+            <Movements {...props} />
+          ) : tab !== 'item' ? (
+            <Inventory key={tab} tab={tab} {...props} />
+          ) : action === 'edit' ? (
+            <ItemEdit key={itemId} id={itemId} {...props} />
+          ) : (
+            <Item key={itemId} id={itemId} {...props} />
+          ))}
         {active === 'profile' && <Profile {...props} onChanged={loadUser} />}
         {active === 'users' && <Users {...props} />}
       </main>

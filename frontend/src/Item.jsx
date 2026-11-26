@@ -1,25 +1,44 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { api } from './api.js'
-import { MoveStock, Owner } from './itemControls.jsx'
+import Breadcrumb from './Breadcrumb.jsx'
+import { MoveStock } from './itemControls.jsx'
+import { Slideshow } from './itemImage.jsx'
+
+function Details({ rows }) {
+  return (
+    <dl className="details-list">
+      {rows.map(([term, value]) => (
+        <div key={term}>
+          <dt>{term}</dt>
+          <dd>{value}</dd>
+        </div>
+      ))}
+    </dl>
+  )
+}
 
 // The profile of one item.
 export default function Item({ id, user, onExpired }) {
   const [item, setItem] = useState(null)
   const [history, setHistory] = useState([])
   const [error, setError] = useState('')
+  const [slide, setSlide] = useState(0)
+  const [historyOpen, setHistoryOpen] = useState(true)
 
   const handle = useCallback((err) => (err.status === 401 ? onExpired() : setError(err.message)), [onExpired])
 
   const refresh = useCallback(async () => {
     try {
-      const [found, movements] = await Promise.all([api(`/items/${id}`), api(`/items/${id}/movements`)])
+      const found = await api(`/items/${id}`)
+      // The server refuses a private history to anyone but an admin, so don't ask for it.
+      const mayRead = !found.history_private || user.role === 'admin'
+      setHistory(mayRead ? await api(`/items/${id}/movements`) : [])
       setItem(found)
-      setHistory(movements)
     } catch (err) {
       handle(err)
     }
-  }, [id, handle])
+  }, [id, user.role, handle])
 
   useEffect(() => {
     refresh()
@@ -27,22 +46,18 @@ export default function Item({ id, user, onExpired }) {
 
   async function send(path, options, form) {
     setError('')
+    let result = null
     try {
-      await api(path, { method: 'POST', ...options })
+      result = await api(path, { method: 'POST', ...options })
       form?.reset()
     } catch (err) {
       handle(err)
     }
     await refresh()
+    return result
   }
 
-  const path = (
-    <nav className="breadcrumb" aria-label="Breadcrumb">
-      <a href="#/inventory">Items</a>
-      <span aria-hidden="true">&gt;</span>
-      <span aria-current="page">ID {id}</span>
-    </nav>
-  )
+  const path = <Breadcrumb id={id} />
   if (!item) {
     return (
       <>
@@ -52,45 +67,143 @@ export default function Item({ id, user, onExpired }) {
     )
   }
 
+  // The slide on show; kept inside the range when a picture is removed.
+  const shown = Math.min(slide, Math.max(item.image_ids.length - 1, 0))
+
+  const hidden = item.quantity === null // private stock, and this user is not an admin
+  const historyHidden = item.history_private && user.role !== 'admin'
+  const status = item.quantity === 0 ? 'Out of stock' : item.low_stock ? 'Low stock' : 'In stock'
+  const tag = (isPrivate) => <span className="tag">{isPrivate ? 'Private' : 'Public'}</span>
+  const alwaysPublic = <span className="tag">Always public</span>
+
+  function showHistory() {
+    setHistoryOpen(true)
+    document.getElementById('stock-history').scrollIntoView({ behavior: 'smooth' })
+  }
+  const last = history[0]
+  const signed = (change) => (change > 0 ? `+${change}` : change)
+  const when = (entry) => new Date(entry.created_at).toLocaleString()
+
+  // Laid out like a shop's product page: the pictures, what you can do beside it, then the details.
   return (
     <>
       {path}
-      <h1>{item.name}</h1>
-      <p className="hint">
-        ID {item.id} · SKU {item.sku}
-      </p>
       {error && <p className="error">{error}</p>}
 
-      <section className={item.low_stock ? 'card low' : 'card'}>
-        <h2>Stock</h2>
-        <p>
-          <strong>{item.quantity}</strong> in stock, reorder at {item.reorder_level}
-          {item.low_stock && ' (low stock)'}
-        </p>
-        <MoveStock item={item} send={send} withNote />
+      <div className="product">
+        <Slideshow item={item} shown={shown} onShow={setSlide} />
+
+        <div className="product-side">
+          <div className="product-head">
+            <h1>{item.name}</h1>
+            <a className="edit-button" href={`#/inventory/item/${item.id}/edit`}>
+              Edit
+            </a>
+          </div>
+          <p className="subtitle">
+            SKU {item.sku} · ID {item.id}
+          </p>
+          {hidden ? (
+            <div className="buy-box">
+              <p>The stock of this item is private.</p>
+            </div>
+          ) : (
+            <>
+              <span className={item.low_stock ? 'badge low' : 'badge'}>{status}</span>
+
+              <div className="buy-box">
+                <p className="figure">
+                  <strong>{item.quantity}</strong> in stock
+                </p>
+                <p className="hint">Reorder at {item.reorder_level}</p>
+                <MoveStock item={item} send={send} />
+              </div>
+            </>
+          )}
+          {!historyHidden && (
+            <p className="fact">
+              <span className="hint">Last movement</span>
+              {last ? (
+                <span>
+                  {signed(last.change)} by {last.username}
+                  <button type="button" className="link" onClick={showHistory}>
+                    See all
+                  </button>
+                </span>
+              ) : (
+                <span>None yet</span>
+              )}
+            </p>
+          )}
+        </div>
+      </div>
+
+      <section className="block">
+        <h2>Product details</h2>
+        <div className="card panel">
+          <h3>Stock {tag(item.stock_private)}</h3>
+          {hidden ? (
+            <p className="hint">This information is private. Only admins can see it.</p>
+          ) : (
+            <Details
+              rows={[
+                ['In stock', item.quantity],
+                ['Status', status],
+                ['Reorder level', item.reorder_level],
+              ]}
+            />
+          )}
+        </div>
       </section>
 
-      <section className="card">
-        <h2>Attached to</h2>
-        <p>
-          <Owner item={item} user={user} send={send} />
-        </p>
+      <section className="card panel">
+        <h3>Description {alwaysPublic}</h3>
+        {item.description ? <p className="description">{item.description}</p> : <p className="hint">No description yet.</p>}
       </section>
 
-      <section className="card">
-        <h2>History</h2>
-        {history.length === 0 && <p className="hint">No stock movements yet.</p>}
-        <ul className="list">
-          {history.map((entry) => (
-            <li key={entry.id}>
-              <span>
-                <strong>{entry.change > 0 ? `+${entry.change}` : entry.change}</strong> by {entry.username}
-                {entry.note && <small>{entry.note}</small>}
-              </span>
-              <span className="hint">{new Date(entry.created_at).toLocaleString()}</span>
-            </li>
-          ))}
-        </ul>
+      <section className="card panel" id="stock-history">
+        <h3>
+          Stock history
+          <span className="panel-actions">
+            {tag(item.history_private)}
+            <button
+              type="button"
+              className="toggle"
+              aria-expanded={historyOpen}
+              aria-controls="history-body"
+              aria-label={historyOpen ? 'Hide stock history' : 'Show stock history'}
+              onClick={() => setHistoryOpen(!historyOpen)}
+            >
+              <span aria-hidden="true">⌄</span>
+            </button>
+          </span>
+        </h3>
+        <div id="history-body" hidden={!historyOpen}>
+          {historyHidden && <p className="hint">The stock history is private. Only admins can see it.</p>}
+          {!historyHidden && history.length === 0 && <p className="hint">No stock movements yet.</p>}
+          {history.length > 0 && (
+            <table className="history">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Change</th>
+                  <th>By</th>
+                  <th>Note</th>
+                </tr>
+              </thead>
+              <tbody>
+                {history.map((entry) => (
+                  <tr key={entry.id}>
+                    <td>{when(entry)}</td>
+                    <td>{signed(entry.change)}</td>
+                    <td>{entry.username}</td>
+                    <td>{entry.note}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
       </section>
     </>
   )
