@@ -44,6 +44,22 @@ def current_user(
     return user
 
 
+def require_permission(field: str, action: str):
+    """For things a staff account can be switched off from. Admins always pass."""
+
+    def check(user: User = Depends(current_user)) -> User:
+        if user.role != ADMIN and not getattr(user, field):
+            raise HTTPException(403, f"You don't have permission to {action}")
+        return user
+
+    return check
+
+
+may_add_items = require_permission("can_add_items", "add items")
+may_move_stock = require_permission("can_move_stock", "change stock")
+may_edit_items = require_permission("can_edit_items", "edit items")
+
+
 def require_admin(user: User = Depends(current_user)) -> User:
     if user.role != ADMIN:
         raise HTTPException(403, "Admins only")

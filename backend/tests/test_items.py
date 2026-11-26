@@ -1,5 +1,7 @@
 import pytest
 
+from app.models import ItemImage
+
 WIDGET = {"sku": "W-1", "name": "Widget", "quantity": 10, "reorder_level": 3}
 
 
@@ -93,4 +95,24 @@ def test_all_movements_newest_first_across_items(client, widget, as_staff, as_ad
 def test_the_movement_list_needs_a_sign_in_and_a_sane_limit(client, as_staff):
     assert client.get("/api/movements").status_code == 401
     assert client.get("/api/movements?limit=1000", headers=as_staff).status_code == 422
+
+
+def test_removing_an_item_takes_its_pictures_and_movements_only(client, session, widget, as_staff, as_admin):
+    other = client.post("/api/items", json={**WIDGET, "sku": "G-1"}, headers=as_staff).json()
+    for item in (widget, other):
+        move(client, as_staff, item, 1)
+        client.post(f"/api/items/{item['id']}/images", content=b"\x89PNG\r\n\x1a\n", headers=as_staff)
+    url = f"/api/items/{widget['id']}"
+    assert client.delete(url, headers=as_admin).status_code == 204
+    assert client.get(url, headers=as_admin).status_code == 404
+    assert [m["item_id"] for m in client.get("/api/movements", headers=as_admin).json()] == [other["id"]]
+    assert [image.item_id for image in session.query(ItemImage)] == [other["id"]]
+    assert client.delete(url, headers=as_admin).status_code == 404
+
+
+def test_only_an_admin_removes_items(client, widget, as_staff):
+    url = f"/api/items/{widget['id']}"
+    assert client.delete(url).status_code == 401
+    assert client.delete(url, headers=as_staff).status_code == 403
+    assert client.get(url, headers=as_staff).status_code == 200
 

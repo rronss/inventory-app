@@ -1,21 +1,33 @@
 import { useCallback, useEffect, useState } from 'react'
 
+import Admin from './Admin.jsx'
 import { api, getToken, setToken } from './api.js'
 import Home from './Home.jsx'
 import Inventory from './Inventory.jsx'
 import Item from './Item.jsx'
 import ItemEdit from './ItemEdit.jsx'
 import Movements from './Movements.jsx'
+import Person from './Person.jsx'
 import Landing from './Landing.jsx'
 import Profile from './Profile.jsx'
-import Users from './Users.jsx'
 
-const PAGES = { home: 'Home', inventory: 'Inventory', profile: 'My profile', users: 'Users' }
-const INVENTORY_TABS = [
-  ['', 'Items'],
-  ['movements', 'Movements'],
-  ['add', 'Add an item'],
-]
+const PAGES = { home: 'Home', inventory: 'Inventory', profile: 'Profile', admin: 'Admin' }
+// The second row of tabs, for the pages that have one.
+const SUBTABS = {
+  inventory: [
+    ['', 'Items'],
+    ['movements', 'Movements'],
+  ],
+  admin: [
+    ['', 'Users'],
+    ['staff', 'Staff'],
+  ],
+  profile: [
+    ['', 'My profile'],
+    ['edit', 'Edit profile'],
+    ['security', 'Privacy & Security'],
+  ],
+}
 const currentPage = () => window.location.hash.replace(/^#\/?/, '')
 
 export default function App() {
@@ -68,12 +80,16 @@ export default function App() {
   if (!user) return <Landing page={page} onSignedIn={loadUser} />
 
   const isAdmin = user.role === 'admin'
-  const visible = Object.entries(PAGES).filter(([key]) => key !== 'users' || isAdmin)
-  // "inventory/add" is the second tab of the inventory page; "inventory/item/3" is one item's profile
+  const visible = Object.entries(PAGES).filter(([key]) => key !== 'admin' || isAdmin)
+  // "inventory/add" is the form behind the New button on Items; "inventory/item/3" is one item's profile
   // and "inventory/item/3/edit" changes it.
   const [section, tab = '', itemId, action] = page.split('/')
-  const active = visible.some(([key]) => key === section) ? section : 'home'
+  // "people/3" is someone's profile. It has no tab of its own.
+  const person = section === 'people' && tab
+  const active = person ? 'people' : visible.some(([key]) => key === section) ? section : 'home'
   const props = { user, onExpired: logOut }
+  // An item's page and the New form belong to the Items tab.
+  const subtab = active === 'inventory' && ['item', 'add'].includes(tab) ? '' : tab
 
   return (
     <>
@@ -88,14 +104,11 @@ export default function App() {
             </a>
           ))}
         </nav>
-        <button className="secondary" onClick={logOut}>
-          Sign out
-        </button>
       </header>
-      {active === 'inventory' && (
-        <nav className="subtabs" aria-label="Inventory">
-          {INVENTORY_TABS.map(([key, label]) => (
-            <a key={label} href={`#/inventory${key && `/${key}`}`} aria-current={(tab === 'item' ? '' : tab) === key ? 'page' : undefined}>
+      {SUBTABS[active] && (
+        <nav className="subtabs" aria-label={PAGES[active]}>
+          {SUBTABS[active].map(([key, label]) => (
+            <a key={label} href={`#/${active}${key && `/${key}`}`} aria-current={subtab === key ? 'page' : undefined}>
               {label}
             </a>
           ))}
@@ -113,8 +126,9 @@ export default function App() {
           ) : (
             <Item key={itemId} id={itemId} {...props} />
           ))}
-        {active === 'profile' && <Profile {...props} onChanged={loadUser} />}
-        {active === 'users' && <Users {...props} />}
+        {active === 'profile' && <Profile key={tab} tab={tab} {...props} onChanged={loadUser} onSignOut={logOut} />}
+        {active === 'admin' && <Admin key={tab} tab={tab} {...props} />}
+        {person && <Person key={tab} id={tab} {...props} />}
       </main>
     </>
   )

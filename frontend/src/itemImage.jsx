@@ -12,14 +12,20 @@ export function imageProblem(file) {
   return ''
 }
 
-// An <img> cannot send the sign-in token, so the picture is fetched first and shown from memory.
 export function Picture({ itemId, imageId, alt }) {
+  const url = useFileUrl(`/items/${itemId}/images/${imageId}`)
+  return url && <img src={url} alt={alt} />
+}
+
+// The server wants the sign-in token for these files, so they are fetched and shown from memory.
+export function useFileUrl(path) {
   const [url, setUrl] = useState('')
 
   useEffect(() => {
+    if (!path) return undefined
     let wanted = true
     let made = ''
-    api(`/items/${itemId}/images/${imageId}`, { blob: true })
+    api(path, { blob: true })
       .then((file) => {
         if (!wanted) return
         made = URL.createObjectURL(file)
@@ -31,9 +37,9 @@ export function Picture({ itemId, imageId, alt }) {
       if (made) URL.revokeObjectURL(made)
       setUrl('')
     }
-  }, [itemId, imageId])
+  }, [path])
 
-  return url && <img src={url} alt={alt} />
+  return url
 }
 
 export function Slideshow({ item, shown, onShow }) {

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { api } from './api.js'
 import Breadcrumb from './Breadcrumb.jsx'
-import { MoveStock } from './itemControls.jsx'
+import { may, MoveStock, personLink } from './itemControls.jsx'
 import { Slideshow } from './itemImage.jsx'
 
 function Details({ rows }) {
@@ -96,9 +96,11 @@ export default function Item({ id, user, onExpired }) {
         <div className="product-side">
           <div className="product-head">
             <h1>{item.name}</h1>
-            <a className="edit-button" href={`#/inventory/item/${item.id}/edit`}>
-              Edit
-            </a>
+            {may(user, 'can_edit_items') && (
+              <a className="edit-button" href={`#/inventory/item/${item.id}/edit`}>
+                Edit
+              </a>
+            )}
           </div>
           <p className="subtitle">
             SKU {item.sku} · ID {item.id}
@@ -116,7 +118,11 @@ export default function Item({ id, user, onExpired }) {
                   <strong>{item.quantity}</strong> in stock
                 </p>
                 <p className="hint">Reorder at {item.reorder_level}</p>
-                <MoveStock item={item} send={send} />
+                {may(user, 'can_move_stock') ? (
+                  <MoveStock item={item} send={send} />
+                ) : (
+                  <p className="hint">You don't have permission to change stock.</p>
+                )}
               </div>
             </>
           )}
@@ -196,7 +202,9 @@ export default function Item({ id, user, onExpired }) {
                   <tr key={entry.id}>
                     <td>{when(entry)}</td>
                     <td>{signed(entry.change)}</td>
-                    <td>{entry.username}</td>
+                    <td>
+                      <a href={personLink(entry.user_id)}>{entry.username}</a>
+                    </td>
                     <td>{entry.note}</td>
                   </tr>
                 ))}

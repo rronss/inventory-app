@@ -1,6 +1,6 @@
 import re
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Literal
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, field_validator
 
@@ -43,11 +43,60 @@ class UserOut(BaseModel):
     username: str
     name: str
     role: str
+    photo_version: int
+    can_add_items: bool
+    can_move_stock: bool
+    can_edit_items: bool
+
+
+class PermissionsIn(BaseModel):
+    """Fields left out stay as they are."""
+
+    role: Literal["admin", "staff"] | None = None
+    can_add_items: bool | None = None
+    can_move_stock: bool | None = None
+    can_edit_items: bool | None = None
+
+
+class ActivityOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    action: str
+    detail: str
+    created_at: datetime
+
+
+class MeOut(UserOut):
+    """Your own account."""
+
+    bio: str
+
+
+class PersonOut(BaseModel):
+    """A colleague, as anyone signed in may see them."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    username: str
+    name: str
+    role: str
+    bio: str
+    photo_version: int
 
 
 class ProfileIn(BaseModel):
-    name: str = Field(max_length=80)
-    username: Username | None = None  # left out: unchanged
+    """Fields left out stay as they are."""
+
+    name: str | None = Field(default=None, max_length=80)
+    username: Username | None = None
+    bio: str | None = Field(default=None, max_length=500)
+
+
+class EmailIn(BaseModel):
+    new_email: str = Field(max_length=255, pattern=EMAIL_PATTERN)
+    current_password: str = Field(max_length=72)
 
 
 class PasswordIn(BaseModel):

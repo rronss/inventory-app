@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from sqlalchemy import select
 
-from . import auth, images, items
+from . import auth, images, items, people
 from .config import get_settings
 from .db import Base, get_engine, new_session
 from .models import ADMIN, User
@@ -36,6 +36,7 @@ app.include_router(auth.router)
 app.include_router(items.router)
 app.include_router(items.movements_router)
 app.include_router(images.router)
+app.include_router(people.router)
 
 
 @app.get("/health")

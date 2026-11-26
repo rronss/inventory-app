@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { api } from './api.js'
+import { personLink } from './itemControls.jsx'
 
 const PAGE = 50
 
@@ -32,11 +33,11 @@ export default function Movements({ onExpired }) {
     <>
       <h1>Movements</h1>
       {error && <p className="error">{error}</p>}
-      <section className="card">
+      <section className="card table-card">
         {rows === null && !error && <p className="hint">Loading…</p>}
         {rows?.length === 0 && <p className="hint">No stock movements yet.</p>}
         {rows?.length > 0 && (
-          <table className="history">
+          <table className="movements">
             <thead>
               <tr>
                 <th>Date</th>
@@ -47,17 +48,30 @@ export default function Movements({ onExpired }) {
               </tr>
             </thead>
             <tbody>
-              {rows.map((row) => (
-                <tr key={row.id}>
-                  <td>{new Date(row.created_at).toLocaleString()}</td>
-                  <td>
-                    <a href={`#/inventory/item/${row.item_id}`}>{row.item_name}</a>
-                  </td>
-                  <td>{row.change > 0 ? `+${row.change}` : row.change}</td>
-                  <td>{row.username}</td>
-                  <td>{row.note}</td>
-                </tr>
-              ))}
+              {rows.map((row) => {
+                const when = new Date(row.created_at)
+                return (
+                  <tr key={row.id}>
+                    <td className="nowrap" title={when.toLocaleString()}>
+                      {when.toLocaleDateString()}
+                      <small>{when.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</small>
+                    </td>
+                    <td>
+                      <a href={`#/inventory/item/${row.item_id}`}>{row.item_name}</a>
+                      <small>ID {row.item_id}</small>
+                    </td>
+                    <td>
+                      <span className={row.change > 0 ? 'change up' : 'change down'}>
+                        {row.change > 0 ? `+${row.change}` : row.change}
+                      </span>
+                    </td>
+                    <td>
+                      <a href={personLink(row.user_id)}>{row.username}</a>
+                    </td>
+                    <td className="note-cell">{row.note || '—'}</td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         )}

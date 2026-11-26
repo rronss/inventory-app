@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 
 import { api } from './api.js'
 import Breadcrumb from './Breadcrumb.jsx'
+import { may } from './itemControls.jsx'
 import { IMAGE_TYPES, imageProblem, MAX_IMAGES, Picture } from './itemImage.jsx'
 
 const PRIVACY = [
@@ -75,7 +76,8 @@ export default function ItemEdit({ id, user, onExpired }) {
       {error && <p className="error">{error}</p>}
       {!item && !error && <p className="hint">Loading…</p>}
 
-      {item && (
+      {item && !may(user, 'can_edit_items') && <p className="hint">You don't have permission to edit items.</p>}
+      {item && may(user, 'can_edit_items') && (
         <>
           <form className="card edit-form" onSubmit={save}>
             <h2>Details</h2>

@@ -23,10 +23,39 @@ class User(Base):
     username: Mapped[str] = mapped_column(String(30))
     name: Mapped[str] = mapped_column(String(80), default="")
     role: Mapped[str] = mapped_column(String(20), default=STAFF)
+    bio: Mapped[str] = mapped_column(String(500), default="")
+    # What a staff account may do. Admins may always do all of it.
+    can_add_items: Mapped[bool] = mapped_column(default=True)
+    can_move_stock: Mapped[bool] = mapped_column(default=True)
+    can_edit_items: Mapped[bool] = mapped_column(default=True)
+    # Counts uploads, so the page knows when to fetch the photo again. 0 means there is none.
+    photo_version: Mapped[int] = mapped_column(default=0)
 
 
 # Kept as typed, but "Ron" and "ron" are the same person.
 Index("ix_users_username_lower", func.lower(User.username), unique=True)
+
+
+class UserPhoto(Base):
+    """A person's photo, in its own table so signing in does not load it."""
+
+    __tablename__ = "user_photos"
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
+    content_type: Mapped[str] = mapped_column(String(20))
+    data: Mapped[bytes] = mapped_column(LargeBinary, deferred=True)
+
+
+class Activity(Base):
+    """One line in an account's log."""
+
+    __tablename__ = "activity"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    action: Mapped[str] = mapped_column(String(40))
+    detail: Mapped[str] = mapped_column(String(300), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
 class Item(Base):
@@ -42,6 +71,7 @@ class Item(Base):
     # Private parts are shown to admins only. The two are chosen separately.
     stock_private: Mapped[bool] = mapped_column(default=False)  # quantity, reorder level, status
     history_private: Mapped[bool] = mapped_column(default=False)  # the movements
+    creator_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), default=None)  # who added it
     images: Mapped[list["ItemImage"]] = relationship(
         lazy="selectin", order_by="ItemImage.id", cascade="all, delete-orphan"
     )

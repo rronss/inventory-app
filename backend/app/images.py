@@ -2,12 +2,13 @@
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy.orm import Session
 
+from .activity import named, record
 from .db import get_db
 from .items import item_or_404
 from .models import ItemImage, User
 from .privacy import item_view
 from .schemas import ItemOut
-from .security import current_user
+from .security import current_user, may_edit_items
 
 MAX_IMAGE_BYTES = 2 * 1024 * 1024  # nginx.conf allows a little more, so this message is the one people see
 MAX_IMAGES = 5
@@ -54,7 +55,7 @@ def add_image(
     item_id: int,
     data: bytes = Depends(uploaded_bytes),
     db: Session = Depends(get_db),
-    user: User = Depends(current_user),
+    user: User = Depends(may_edit_items),
 ):
     item = item_or_404(db, item_id)
     content_type = image_type(data)
@@ -63,13 +64,15 @@ def add_image(
     if len(item.images) >= MAX_IMAGES:
         raise HTTPException(409, f"An item can have {MAX_IMAGES} images")
     item.images.append(ItemImage(content_type=content_type, data=data))
+    record(db, user.id, "image_added", named(item))
     db.commit()
     return item_view(item, user)
 
 
 @router.delete("/{image_id}", response_model=ItemOut)
-def delete_image(item_id: int, image_id: int, db: Session = Depends(get_db), user: User = Depends(current_user)):
+def delete_image(item_id: int, image_id: int, db: Session = Depends(get_db), user: User = Depends(may_edit_items)):
     item = item_or_404(db, item_id)
     item.images.remove(_image_or_404(db, item_id, image_id))
+    record(db, user.id, "image_removed", named(item))
     db.commit()
     return item_view(item, user)

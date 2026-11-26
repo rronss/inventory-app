@@ -1,4 +1,7 @@
 export const itemLink = (item) => `#/inventory/item/${item.id}`
+export const personLink = (id) => `#/people/${id}`
+// What the buttons offer. The server checks the same thing and has the last word.
+export const may = (user, permission) => user.role === 'admin' || user[permission]
 
 export function MoveStock({ item, send }) {
   function move(direction, event) {

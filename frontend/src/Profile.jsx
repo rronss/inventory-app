@@ -1,72 +1,63 @@
 import { useState } from 'react'
 
 import { api } from './api.js'
-import { usernameRule } from './username.js'
+import Avatar from './Avatar.jsx'
+import EditProfile from './EditProfile.jsx'
+import Person from './Person.jsx'
+import SecuritySettings from './SecuritySettings.jsx'
 
-export default function Profile({ user, onChanged, onExpired }) {
+export default function Profile({ tab, user, onChanged, onSignOut, onExpired }) {
   const [message, setMessage] = useState(null)
 
-  async function submit(event, path, method, body, done) {
-    event.preventDefault()
-    const form = event.target
+  const clear = () => setMessage(null)
+  const fail = (text) => setMessage({ ok: false, text })
+
+  // Saves one form. Returns true when the server accepted it.
+  async function save(form, path, method, body, done) {
     setMessage(null)
     try {
       await api(path, { method, body })
       setMessage({ ok: true, text: done })
-      if (method === 'PATCH') await onChanged()
-      else form.reset()
+      if (method === 'POST') form.reset()
+      else await onChanged() // the account shown on this page changed
+      return true
     } catch (err) {
       if (err.status === 401) onExpired()
       else setMessage({ ok: false, text: err.message })
+      return false
     }
   }
 
-  const field = (event, name) => new FormData(event.target).get(name)
+  const notice = message && <p className={message.ok ? 'ok' : 'error'}>{message.text}</p>
 
   return (
     <>
-      <h1>My profile</h1>
-      <p className="hint">
-        {user.username} · {user.role}
-      </p>
-      {message && <p className={message.ok ? 'ok' : 'error'}>{message.text}</p>}
+      <div className="page-head">
+        <h1>Profile</h1>
+        <button type="button" className="tool" onClick={onSignOut}>
+          Sign out
+        </button>
+      </div>
 
-      <form
-        key={`${user.name}|${user.username}`}
-        className="card narrow"
-        onSubmit={(e) =>
-          submit(e, '/auth/me', 'PATCH', { name: field(e, 'name'), username: field(e, 'username') }, 'Profile saved')
-        }
-      >
-        <h2>Name and username</h2>
-        <input name="name" defaultValue={user.name} maxLength="80" placeholder="Name" aria-label="Name" />
-        <input
-          name="username"
-          defaultValue={user.username}
-          placeholder="Username"
-          aria-label="Username"
-          {...usernameRule}
-        />
-        <button type="submit">Save profile</button>
-      </form>
+      {tab !== 'edit' && tab !== 'security' ? (
+        <Person id={user.id} user={user} onExpired={onExpired} />
+      ) : (
+        <>
+          <div className="who">
+            <Avatar user={user} />
+            <div>
+              <strong>{user.username}</strong> <span className="hint">· {user.role}</span>
+              {user.bio && <p className="description">{user.bio}</p>}
+            </div>
+          </div>
 
-      <form
-        className="card narrow"
-        onSubmit={(e) =>
-          submit(
-            e,
-            '/auth/password',
-            'POST',
-            { current_password: field(e, 'current'), new_password: field(e, 'next') },
-            'Password changed',
-          )
-        }
-      >
-        <h2>Password</h2>
-        <input name="current" type="password" autoComplete="current-password" placeholder="Current password" required />
-        <input name="next" type="password" autoComplete="new-password" placeholder="New password (8+)" minLength="8" required />
-        <button type="submit">Change password</button>
-      </form>
+          {tab === 'security' ? (
+            <SecuritySettings user={user} save={save} notice={notice} onSwitch={clear} />
+          ) : (
+            <EditProfile user={user} save={save} notice={notice} fail={fail} onSwitch={clear} />
+          )}
+        </>
+      )}
     </>
   )
 }

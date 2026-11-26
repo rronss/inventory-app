@@ -17,14 +17,18 @@ Open http://localhost:8200 and log in with the admin from your `.env`.
 
 - **Homepage:** what the app does, with **Sign in** and **Register** tabs on top.
 - **Home:** totals and what needs reordering.
-- **Inventory:** three tabs. **Items**, one line per item; **Movements**, every stock change newest first; **Add an item**.
+- **Inventory:** two tabs. **Items**, one line per item, with a **New** button, a search box, a low-stock filter and, for
+  admins, **Select** to remove several at once (a pop-up asks first); **Movements**, every stock change newest first.
 - **Item profile:** every item has an ID and its own page, laid out like a shop's product page: picture slideshow, stock in and
   out, product details, description and stock history (the history folds away). **Edit** opens a page to change the name, SKU, reorder level,
   description and images, with a separate Privacy section for admins.
-- **My profile:** your name, username and password.
-- **Users** (admin): see accounts and create staff accounts.
-
-**Sign out** is in the top bar on every page.
+- **Profile:** three tabs, **My profile** (how your profile reads), **Edit profile** (rows for name, bio and photo) and
+  **Privacy & Security** (rows for password, email and username, and
+  what others can see about you), with **Sign out** on all three.
+- **People:** a person's record shows photo, name, username, role, bio and the items they added, so colleagues can
+  recognise them. Open it from a username in the history or, for admins, from **Admin > Users**.
+- **Admin** (admins only): two tabs, **Users** (who has an account) and **Staff** (add a staff account). On someone
+  else's record an admin also sets their **Permissions** and reads their **Activity log**.
 
 ## Rules the app enforces
 
@@ -33,8 +37,15 @@ Open http://localhost:8200 and log in with the admin from your `.env`.
   and are never shown or sent back by the API. You can sign in with the username or the email.
 - The first admin's username is `admin`.
 - An item can have a description and up to 5 images (PNG, JPEG or WebP, 2 MB each, kept in the database), shown as a
-  slideshow. Anyone logged in can change them.
-- Anyone logged in can add an item and record stock movements.
+  slideshow. Those allowed to edit items can change them.
+- A person's record (name, username, role, bio, photo, items added) is visible to anyone signed in.
+  Emails never are. Items from before creators were recorded belong to the first admin.
+- A staff account can be switched off from adding items, stock in/out, or editing items. Admins can do all of it,
+  and cannot change their own role.
+- Sign-ins, wrong passwords, stock changes, item changes, account and permission changes are logged per account.
+  Only admins read the log. It holds no passwords or email addresses.
+- Adding items and recording stock movements need that permission. Only an admin can remove an item; its pictures and
+  movements are deleted with it.
 - An admin can make two things private per item, separately. **Stock** (quantity, status, reorder level): other users
   get none of it from any endpoint and cannot move that item's stock. **Stock history**: other users cannot read its
   movements. SKU, ID and description are always visible to a signed-in user.
@@ -48,12 +59,15 @@ Open http://localhost:8200 and log in with the admin from your `.env`.
 |---|---|
 | `POST /api/auth/register`, `POST /api/auth/login` | anyone |
 | `GET /api/auth/me` | the logged-in user |
-| `PATCH /api/auth/me`, `POST /api/auth/password` | the logged-in user, for themselves |
-| `GET /api/users`, `POST /api/users` | admin |
+| `PATCH /api/auth/me`, `POST /api/auth/password`, `POST /api/auth/email`, `GET`, `PUT` and `DELETE /api/auth/photo` | the logged-in user, for themselves |
+| `GET /api/users`, `POST /api/users`, `GET /api/users/{id}` | admin |
+| `PATCH /api/users/{id}/permissions`, `GET /api/users/{id}/activity` | admin |
+| `GET /api/people/{id}`, `.../photo`, `.../items` | logged in |
 | `GET /api/movements` (`?limit=`, `?before=`) | logged in |
 | `GET /api/items` (`?low=true`), `GET /api/items/{id}`, `GET /api/items/{id}/movements` | logged in |
-| `POST /api/items`, `POST /api/items/{id}/movements` | logged in |
-| `PATCH /api/items/{id}` (name, SKU, reorder level, description; `stock_private` and `history_private` admin only), `POST /api/items/{id}/images`, `DELETE /api/items/{id}/images/{image}` | logged in |
+| `POST /api/items`, `POST /api/items/{id}/movements` | logged in, with that permission |
+| `DELETE /api/items/{id}` | admin |
+| `PATCH /api/items/{id}` (name, SKU, reorder level, description; `stock_private` and `history_private` admin only), `POST /api/items/{id}/images`, `DELETE /api/items/{id}/images/{image}` | logged in, with permission to edit items |
 | `GET /api/items/{id}/images/{image}` | logged in |
 
 ## Develop
