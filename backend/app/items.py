@@ -41,7 +41,7 @@ def move_stock(item_id: int, body: MovementIn, db: Session = Depends(get_db), us
     # One conditional UPDATE, so two removals at the same moment cannot take the stock below zero.
     changed = db.execute(
         update(Item)
-        .where(Item.id == item_id, Item.quantity + body.change >= 0)
+        .where(Item.id == item_id, Item.quantity + body.change > 0)
         .values(quantity=Item.quantity + body.change)
     )
     if changed.rowcount == 0:
