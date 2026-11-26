@@ -33,7 +33,7 @@ def client(session):
 
 
 def _user(session, email: str, role: str) -> User:
-    user = User(email=email, password_hash=hash_password(PASSWORD), role=role)
+    user = User(email=email, username=email.split("@")[0], password_hash=hash_password(PASSWORD), role=role)
     session.add(user)
     session.commit()
     return user

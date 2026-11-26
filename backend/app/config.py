@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     # No default on purpose: the app must not start with a key someone could guess.
     SECRET_KEY: str = Field(min_length=32)
     DATABASE_URL: str = "sqlite:///./inventory.db"
-    # The first admin, created at startup if no user exists yet. There is no public sign-up.
+    # The first admin, created at startup if no user exists yet. People who register are staff.
     ADMIN_EMAIL: str = ""
     ADMIN_PASSWORD: str = ""
     TOKEN_MINUTES: int = 60

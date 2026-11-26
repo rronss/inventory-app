@@ -12,7 +12,7 @@ export default function Login({ onSignedIn }) {
     try {
       const { access_token } = await api('/auth/login', {
         method: 'POST',
-        body: { email: form.get('email'), password: form.get('password') },
+        body: { login: form.get('login'), password: form.get('password') },
       })
       setToken(access_token)
       await onSignedIn()
@@ -22,19 +22,23 @@ export default function Login({ onSignedIn }) {
   }
 
   return (
-    <form className="card center" onSubmit={submit}>
-      <h1>Sign in</h1>
+    <form className="card" onSubmit={submit}>
+      <h2>Sign in</h2>
       <label>
-        Email
-        <input name="email" type="email" autoComplete="username" required />
+        Email or username
+        <input name="login" autoComplete="username" required />
       </label>
       <label>
         Password
         <input name="password" type="password" autoComplete="current-password" required />
       </label>
       {error && <p className="error">{error}</p>}
-      <button type="submit">Sign in</button>
-      <p className="hint">Accounts are created by an admin.</p>
+      <button type="submit" className="wide">
+        Sign in
+      </button>
+      <p className="hint">
+        No account yet? <a href="#/register">Register</a>
+      </p>
     </form>
   )
 }
