@@ -1,0 +1,35 @@
+# Copy .env.example to .env first. Then: docker compose up --build  ->  http://localhost:8200
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: inventory
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set it in .env}
+      POSTGRES_DB: inventory
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U inventory"]
+      interval: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://inventory:${POSTGRES_PASSWORD}@db:5432/inventory
+      SECRET_KEY: ${SECRET_KEY:?set it in .env}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "8200:8080" # the only published port; the database and the API stay inside the compose network
+    depends_on:
+      - backend
+
+volumes:
+  db_data:

@@ -1,0 +1,30 @@
+name: triage
+
+# When `ci` fails, github.com/rronss/ci-triage-agent reads the failed log, investigates and posts a diagnosis to Slack.
+# It only reads: it never re-runs, fixes or deploys anything.
+#
+# This workflow can read secrets, so it never checks out or runs the code of the failed run, and it skips forks.
+
+on:
+  workflow_run:
+    workflows: [ci] # the exact `name:` of the pipeline
+    types: [completed]
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  triage:
+    if: >-
+      github.event.workflow_run.conclusion == 'failure' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      # Pinned to a commit, not a branch: this step receives the API key and the Slack webhook.
+      - uses: rronss/ci-triage-agent@4f445193717da50b217d60ab97cca0980050efba
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          slack-webhook-url: ${{ secrets.SLACK_WEBHOOK_URL }}
