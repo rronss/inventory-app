@@ -1,3 +1,4 @@
+# Development: builds from the source here, with its own database. Production is docker-compose.prod.yml.
 # Copy .env.example to .env first. Then: docker compose up --build  ->  http://localhost:8200
 services:
   db:

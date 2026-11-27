@@ -8,17 +8,19 @@ Internet --HTTPS--> EC2: Caddy -> frontend -> backend -> RDS PostgreSQL (private
                                                     \--> S3 (private): picture files
 ```
 
-No SSH: Ansible reaches the server through AWS Systems Manager.
+No SSH: Ansible reaches the server through AWS Systems Manager. The server runs
+[docker-compose.prod.yml](../docker-compose.prod.yml).
 
 ## Before the first deployment
 
 - **Not ready for the public yet:** anyone can register, and sign-in attempts are not limited.
-- **Images:** the playbook pulls `ghcr.io/rronss/inventory-app-backend` and `-frontend` (arm64, public). No workflow
-  publishes them yet.
+- **Images:** the playbook pulls `ghcr.io/rronss/inventory-app-backend` and `-frontend` (arm64), which the
+  `images` workflow publishes after `ci` passes on `main`. Both packages must be public, or the server cannot pull
+  them. To deploy an earlier version, pass `-e image_tag=<commit>`.
 - On your computer: Terraform, Ansible, the AWS CLI and the
   [Session Manager plugin](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-install-plugin.html).
   `ansible-galaxy collection install -r ansible/requirements.yml`. Ansible's Python needs `boto3`.
-- A domain, for HTTPS.
+- A domain, with its DNS at Cloudflare (the free plan is enough).
 
 ## 1. Create the resources
 
@@ -30,8 +32,9 @@ terraform plan -out=tfplan                     # read it
 terraform apply tfplan
 ```
 
-Then point the domain's A record at the `public_ip` output. The state file stays on your computer and is not
-committed.
+Then, in Cloudflare, add an `A` record for the domain with the `public_ip` output, set to **DNS only** (grey cloud),
+so Caddy can get its certificate directly. If you later turn Cloudflare's proxy on, set SSL/TLS to **Full (strict)**.
+The state file stays on your computer and is not committed.
 
 ## 2. Add the secrets (once)
 

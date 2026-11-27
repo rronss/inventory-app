@@ -4,10 +4,16 @@
     state: directory
     mode: "0750"
 
-- name: Write the Compose file
-  ansible.builtin.template:
-    src: compose.yml.j2
+- name: Copy the production Compose file
+  ansible.builtin.copy:
+    src: "{{ playbook_dir }}/../../docker-compose.prod.yml"
     dest: "{{ app_dir }}/compose.yml"
+    mode: "0640"
+
+- name: Choose the images to run
+  ansible.builtin.template:
+    src: images.env.j2
+    dest: "{{ app_dir }}/.env"
     mode: "0640"
 
 - name: Write the web server settings

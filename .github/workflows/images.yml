@@ -1,0 +1,59 @@
+name: images
+
+# Publishes the container images that infrastructure/ansible deploys, and only for code that passed `ci` on main.
+# `latest` is the newest of these; the commit's own tag lets an earlier version be deployed again.
+
+on:
+  workflow_run:
+    workflows: [ci]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: images # one publish at a time, so an older commit does not finish last and take `latest`
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    # A push to this repository's main only. A pull request's run must never publish, whatever its branch is called.
+    if: >-
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_repository.full_name == github.repository
+    runs-on: ubuntu-24.04-arm # the server is ARM (t4g), so build on ARM
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        part: [backend, frontend]
+    env:
+      IMAGE: ghcr.io/${{ github.repository_owner }}/inventory-app-${{ matrix.part }}
+      COMMIT: ${{ github.event.workflow_run.head_sha }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }} # exactly what `ci` tested
+          persist-credentials: false
+
+      - name: Build
+        run: |
+          docker build \
+            --label "org.opencontainers.image.source=$GITHUB_SERVER_URL/$GITHUB_REPOSITORY" \
+            --label "org.opencontainers.image.revision=$COMMIT" \
+            --tag "$IMAGE:$COMMIT" --tag "$IMAGE:latest" \
+            "./${{ matrix.part }}"
+
+      - name: Sign in to the registry
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: echo "$TOKEN" | docker login ghcr.io --username "$GITHUB_ACTOR" --password-stdin
+
+      - name: Publish
+        run: |
+          docker push "$IMAGE:$COMMIT"
+          docker push "$IMAGE:latest"

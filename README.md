@@ -6,6 +6,9 @@ database; picture files can live in S3 instead.
 
 ## Run it
 
+There are two Compose files: `docker-compose.yml` for **development** (builds the source, runs its own database) and
+`docker-compose.prod.yml` for **production** (published images, HTTPS, RDS and S3; see [Deploy](#deploy)).
+
 ```bash
 cp .env.example .env   # then fill in the four values
 docker compose up --build
@@ -144,3 +147,5 @@ deployment). It has not been applied yet.
 `ci` lints and tests the backend and builds the frontend, on pushes to `main` and `change/**` and on pull requests.
 When it fails, `triage` asks [ci-triage-agent](https://github.com/rronss/ci-triage-agent) to diagnose the run and post
 the result to Slack. It needs two repository secrets, `ANTHROPIC_API_KEY` and `SLACK_WEBHOOK_URL`.
+
+`images` publishes the backend and frontend containers to GitHub's registry after `ci` passes on `main`.

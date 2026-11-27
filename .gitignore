@@ -14,3 +14,4 @@ dist/
 tfplan
 .terraform/
 infrastructure/ansible/tf-outputs.json
+backend.env

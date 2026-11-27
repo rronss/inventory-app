@@ -1,4 +1,6 @@
-# {{ ansible_managed }}
+# Production. The server runs this file as it is: infrastructure/ansible copies it there, with a Caddyfile,
+# backend.env (settings and secrets) and a .env naming the image tag. The database is RDS, so there is none here.
+# For development use docker-compose.yml.
 name: crate
 
 x-service: &service
@@ -24,13 +26,13 @@ services:
 
   frontend:
     <<: *service
-    image: {{ image_registry }}/inventory-app-frontend:{{ image_tag }}
+    image: ${IMAGE_REGISTRY:-ghcr.io/rronss}/inventory-app-frontend:${IMAGE_TAG:-latest}
     depends_on:
       - backend
 
   backend:
     <<: *service
-    image: {{ image_registry }}/inventory-app-backend:{{ image_tag }}
+    image: ${IMAGE_REGISTRY:-ghcr.io/rronss}/inventory-app-backend:${IMAGE_TAG:-latest}
     env_file:
       - backend.env
 
