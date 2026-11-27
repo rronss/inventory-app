@@ -40,7 +40,8 @@ Open http://localhost:8200 and log in with the admin from your `.env`.
 - **Profile:** your record and the items you added, as picture cards.
 - **Who can chat me** (Settings > Privacy & Security): **Everyone**, the default, or **Friends only**. With
   **Friends only**, others are told so when they try; you can still write to them, but they cannot reply.
-- **Settings:** two tabs, **Profile Settings** (rows for bio and photo) and **Privacy & Security** (rows for
+- **Settings:** two tabs, **Profile Settings** (rows for bio and photo; the photo is one of five default
+  avatars or your own upload) and **Privacy & Security** (rows for
   password, email and username, and what others can see about you).
 - **Profile menu** (three lines, top right of every profile): on yours, Edit profile, Friends and Privacy; on someone
   else's, Chat, the friend options and Block.

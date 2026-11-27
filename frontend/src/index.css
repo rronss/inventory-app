@@ -130,6 +130,11 @@ button.setting { display: flex; justify-content: space-between; align-items: cen
 button.setting > span:last-child { color: #667085; font-weight: 400; }
 .setting-body { padding: 0 4px 14px; }
 .setting-body input { margin-bottom: 10px; }
+.avatar-choices-title { margin: 0 0 8px; }
+.avatar-choices { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 16px; }
+.avatar-choices button { padding: 0; border-radius: 50%; background: none; line-height: 0; }
+.avatar-choices button:hover, .avatar-choices button:focus-visible { box-shadow: 0 0 0 3px #1d4ed8; }
+.avatar-choices img { width: 56px; height: 56px; border-radius: 50%; }
 .facts { margin: 0; padding-left: 18px; }
 .facts li { margin-bottom: 6px; }
 .narrow input { margin-bottom: 10px; }
