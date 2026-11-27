@@ -83,6 +83,7 @@ def test_old_databases_gain_the_new_columns_once():
     with engine.begin() as db:
         db.execute(text("CREATE TABLE users (id INTEGER PRIMARY KEY, role VARCHAR(20))"))
         db.execute(text("CREATE TABLE items (id INTEGER PRIMARY KEY)"))
+        db.execute(text("CREATE TABLE item_images (id INTEGER PRIMARY KEY)"))
         db.execute(text("INSERT INTO users (id) VALUES (7)"))
     assert add_missing_columns(engine) == [
         "users.name",
@@ -96,6 +97,8 @@ def test_old_databases_gain_the_new_columns_once():
         "items.stock_private",
         "items.history_private",
         "items.creator_id",
+        "items.created_at",
+        "item_images.position",
     ]
     assert add_missing_columns(engine) == []
     with engine.connect() as db:

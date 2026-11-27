@@ -15,6 +15,7 @@ export default function ItemEdit({ id, user, onExpired }) {
   const [item, setItem] = useState(null)
   const [error, setError] = useState('')
   const [privacySaved, setPrivacySaved] = useState(false)
+  const [dragged, setDragged] = useState(null) // id of the picture being dragged
 
   const handle = useCallback((err) => (err.status === 401 ? onExpired() : setError(err.message)), [onExpired])
 
@@ -68,6 +69,33 @@ export default function ItemEdit({ id, user, onExpired }) {
     const updated = await send(`/items/${id}/images/${imageId}`, { method: 'DELETE' })
     if (updated) setItem(updated)
   }
+
+  // Shown in the new order at once; put back if the server says no.
+  async function moveImage(imageId, to) {
+    const before = item
+    const order = item.image_ids.filter((other) => other !== imageId)
+    order.splice(to, 0, imageId)
+    setItem({ ...item, image_ids: order })
+    const updated = await send(`/items/${id}/images/order`, { method: 'PUT', body: { image_ids: order } })
+    setItem(updated || before)
+  }
+
+  const dragging = (imageId, index) => ({
+    draggable: true,
+    onDragStart: (event) => {
+      event.dataTransfer.effectAllowed = 'move'
+      event.dataTransfer.setData('text/plain', String(imageId))
+      setDragged(imageId)
+    },
+    // only our own pictures can be dropped here, not files from the desktop
+    onDragOver: (event) => dragged !== null && event.preventDefault(),
+    onDrop: (event) => {
+      event.preventDefault()
+      if (dragged !== null && dragged !== imageId) moveImage(dragged, index)
+      setDragged(null)
+    },
+    onDragEnd: () => setDragged(null),
+  })
 
   return (
     <>
@@ -127,12 +155,19 @@ export default function ItemEdit({ id, user, onExpired }) {
 
           <section className="card edit-form">
             <h2>Images</h2>
-            <p className="hint">Adding and removing an image takes effect at once.</p>
+            <p className="hint">Drag a picture to move it. The first is the main picture. Changes take effect at once.</p>
             {item.image_ids.length === 0 && <p className="hint">No images yet.</p>}
             <ul className="thumbs">
               {item.image_ids.map((imageId, index) => (
-                <li key={imageId}>
+                <li key={imageId} className={dragged === imageId ? 'dragging' : ''} {...dragging(imageId, index)}>
                   <Picture itemId={item.id} imageId={imageId} alt={`${item.name}, picture ${index + 1}`} />
+                  {index === 0 ? (
+                    <span className="main-picture">Main</span>
+                  ) : (
+                    <button type="button" className="tool" onClick={() => moveImage(imageId, 0)}>
+                      Make main
+                    </button>
+                  )}
                   <button type="button" className="secondary" onClick={() => remove(imageId)}>
                     Remove
                   </button>

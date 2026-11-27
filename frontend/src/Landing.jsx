@@ -1,3 +1,4 @@
+import Brand from './Brand.jsx'
 import Hero from './Hero.jsx'
 import Login from './Login.jsx'
 import Register from './Register.jsx'
@@ -14,9 +15,7 @@ export default function Landing({ page, onSignedIn }) {
   return (
     <>
       <header className="topbar">
-        <a className="brand" href="#/">
-          Inventory
-        </a>
+        <Brand href="#/" />
         <nav className="end">
           {TABS.map(([key, label]) => (
             <a key={label} href={`#/${key}`} aria-current={active === key ? 'page' : undefined}>

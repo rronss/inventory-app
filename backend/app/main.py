@@ -31,10 +31,11 @@ async def lifespan(app: FastAPI):
     yield
 
 
-app = FastAPI(title="Inventory", lifespan=lifespan)
+app = FastAPI(title="Crate", lifespan=lifespan)
 app.include_router(auth.router)
 app.include_router(items.router)
 app.include_router(items.movements_router)
+app.include_router(items.explore_router)
 app.include_router(images.router)
 app.include_router(people.router)
 

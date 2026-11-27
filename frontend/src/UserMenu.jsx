@@ -36,7 +36,6 @@ export default function UserMenu({ user, current, onSignOut }) {
       {open && (
         <div className="menu">
           <ul>
-            {link('profile', 'Profile')}
             {link('settings', 'Settings')}
           </ul>
           <ul className="menu-second">

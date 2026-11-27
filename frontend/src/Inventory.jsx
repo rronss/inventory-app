@@ -172,7 +172,7 @@ export default function Inventory({ tab, user, onExpired }) {
           </section>
 
           <section className="card panel">
-            <h3>Inventory</h3>
+            <h3>All items</h3>
             <ul className="rows">
               {shown.map((item) => (
                 <li key={item.id}>

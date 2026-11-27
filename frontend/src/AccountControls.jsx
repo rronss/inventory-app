@@ -19,6 +19,7 @@ const ACTIONS = {
   item_removed: 'Removed an item',
   image_added: 'Added a picture',
   image_removed: 'Removed a picture',
+  image_reordered: 'Arranged pictures',
   profile_changed: 'Changed profile',
   password_changed: 'Changed password',
   email_changed: 'Changed email',

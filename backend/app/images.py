@@ -7,7 +7,7 @@ from .db import get_db
 from .items import item_or_404
 from .models import ItemImage, User
 from .privacy import item_view
-from .schemas import ItemOut
+from .schemas import ImageOrderIn, ItemOut
 from .security import current_user, may_edit_items
 
 MAX_IMAGE_BYTES = 2 * 1024 * 1024  # nginx.conf allows a little more, so this message is the one people see
@@ -63,9 +63,27 @@ def add_image(
         raise HTTPException(415, "The image must be a PNG, JPEG or WebP file")
     if len(item.images) >= MAX_IMAGES:
         raise HTTPException(409, f"An item can have {MAX_IMAGES} images")
-    item.images.append(ItemImage(content_type=content_type, data=data))
+    last = max((image.position for image in item.images), default=-1)
+    item.images.append(ItemImage(content_type=content_type, data=data, position=last + 1))
     record(db, user.id, "image_added", named(item))
     db.commit()
+    return item_view(item, user)
+
+
+@router.put("/order", response_model=ItemOut)
+def arrange_images(
+    item_id: int, body: ImageOrderIn, db: Session = Depends(get_db), user: User = Depends(may_edit_items)
+):
+    """The item's pictures in the order to show them. The first is the main one."""
+    item = item_or_404(db, item_id)
+    if sorted(body.image_ids) != sorted(item.image_ids):
+        raise HTTPException(422, "List each of this item's images once")
+    if body.image_ids != item.image_ids:
+        for image in item.images:
+            image.position = body.image_ids.index(image.id)
+        record(db, user.id, "image_reordered", named(item))
+        db.commit()
+        db.expire(item, ["images"])  # read them again in their new order
     return item_view(item, user)
 
 

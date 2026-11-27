@@ -65,6 +65,30 @@ def test_adding_viewing_and_removing_images(client, widget, as_staff, other):
     assert client.get(f"{url}/{one}", headers=as_staff).status_code == 404
 
 
+def test_arranging_images_and_choosing_the_main_one(client, widget, as_staff):
+    url = images_url(widget)
+    for _ in range(3):
+        ids = client.post(url, content=PNG, headers=as_staff).json()["image_ids"]
+    new_order = [ids[2], ids[0], ids[1]]
+    assert client.put(f"{url}/order", json={"image_ids": new_order}, headers=as_staff).json()["image_ids"] == new_order
+    assert client.get(f"/api/items/{widget['id']}", headers=as_staff).json()["image_ids"] == new_order
+    added = client.post(url, content=PNG, headers=as_staff).json()["image_ids"]
+    assert added[:3] == new_order and len(added) == 4  # a new picture goes to the end
+    assert client.delete(f"{url}/{new_order[0]}", headers=as_staff).json()["image_ids"] == added[1:]
+
+
+def test_an_order_must_list_each_image_once(client, widget, as_staff, staff, session):
+    url = images_url(widget)
+    first = client.post(url, content=PNG, headers=as_staff).json()["image_ids"][0]
+    second = client.post(url, content=PNG, headers=as_staff).json()["image_ids"][1]
+    for wrong in ([first], [first, first], [first, second, 999]):
+        assert client.put(f"{url}/order", json={"image_ids": wrong}, headers=as_staff).status_code == 422
+    assert client.put(f"{url}/order", json={"image_ids": [second, first]}).status_code == 401
+    staff.can_edit_items = False
+    session.commit()
+    assert client.put(f"{url}/order", json={"image_ids": [second, first]}, headers=as_staff).status_code == 403
+
+
 def test_an_image_is_reached_only_through_its_own_item(client, widget, as_staff):
     second = client.post("/api/items", json={**WIDGET, "sku": "W-2"}, headers=as_staff).json()
     image = client.post(images_url(widget), content=PNG, headers=as_staff).json()["image_ids"][0]

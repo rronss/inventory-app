@@ -2,7 +2,9 @@ import { useCallback, useEffect, useState } from 'react'
 
 import Admin from './Admin.jsx'
 import { api, getToken, setToken } from './api.js'
+import Brand from './Brand.jsx'
 import Dashboard from './Dashboard.jsx'
+import Explore from './Explore.jsx'
 import Home from './Home.jsx'
 import Inventory from './Inventory.jsx'
 import Item from './Item.jsx'
@@ -13,15 +15,15 @@ import Landing from './Landing.jsx'
 import Profile from './Profile.jsx'
 import UserMenu from './UserMenu.jsx'
 
-const PAGES = { home: 'Home', inventory: 'Inventory', profile: 'Profile', settings: 'Settings', admin: 'Admin' }
+const PAGES = { home: 'Home', explore: 'Explore', inventory: 'Inventory', profile: 'Profile', settings: 'Settings', admin: 'Admin' }
 // The rest are reached from the profile icon.
-const IN_TOP_BAR = ['home', 'inventory']
+const IN_TOP_BAR = ['explore', 'inventory', 'profile'] // the homepage opens from the app's name
 // The second row of tabs, for the pages that have one.
 const SUBTABS = {
   inventory: [
+    ['overview', 'Overview'],
     ['', 'Items'],
     ['movements', 'Movements'],
-    ['overview', 'Overview'],
   ],
   admin: [
     ['', 'Users'],
@@ -98,9 +100,7 @@ export default function App() {
   return (
     <>
       <header className="topbar">
-        <a className="brand" href="#/inventory/overview">
-          Inventory
-        </a>
+        <Brand href="#/home" />
         <nav>
           {visible
             .filter(([key]) => IN_TOP_BAR.includes(key))
@@ -123,6 +123,7 @@ export default function App() {
       )}
       {active === 'home' && <Home />}
       <main>
+        {active === 'explore' && <Explore {...props} />}
         {active === 'inventory' &&
           (tab === 'movements' ? (
             <Movements {...props} />

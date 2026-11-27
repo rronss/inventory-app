@@ -39,6 +39,41 @@ def test_colleagues_see_who_someone_is_but_never_an_email(client, added, staff, 
     assert "@example.com" not in get(client, as_admin, f"/{staff.id}/items").text
 
 
+def test_explore_shows_every_public_item_newest_first(client, added, staff, admin, as_staff, as_admin):
+    client.post("/api/items", json={**ITEM, "sku": "E-1"}, headers=as_admin)
+    seen = client.get("/api/explore", headers=as_staff).json()
+    expected = [("E-1", "admin", admin.id), ("P-1", "staff", staff.id)]  # other people's and your own
+    assert [(i["sku"], i["added_by"], i["added_by_id"]) for i in seen] == expected
+
+
+def test_explore_says_when_each_item_was_added_and_shows_the_adders_photo(client, added, staff, session, as_staff):
+    client.put("/api/auth/photo", content=b"\x89PNG\r\n\x1a\nface", headers=as_staff)
+    item = client.get("/api/explore", headers=as_staff).json()[0]
+    assert item["created_at"] and item["added_by_photo_version"] == 1
+    session.execute(text("UPDATE items SET created_at = NULL"))  # as an item from before dates were kept
+    session.commit()
+    session.expire_all()
+    assert client.get("/api/explore", headers=as_staff).json()[0]["created_at"] is None
+
+
+def test_explore_includes_items_nobody_is_recorded_for(client, added, session, as_staff):
+    session.execute(text("UPDATE items SET creator_id = NULL"))
+    session.commit()
+    session.expire_all()
+    item = client.get("/api/explore", headers=as_staff).json()[0]
+    assert (item["sku"], item["added_by"], item["added_by_id"]) == ("P-1", None, None)
+
+
+def test_explore_leaves_out_private_items_for_everyone(client, added, as_admin, as_staff):
+    client.patch(f"/api/items/{added['id']}", json={"stock_private": True}, headers=as_admin)
+    for headers in (as_staff, as_admin):
+        assert client.get("/api/explore", headers=headers).json() == []
+    client.patch(f"/api/items/{added['id']}", json={"stock_private": False}, headers=as_admin)
+    response = client.get("/api/explore", headers=as_staff)
+    assert [i["sku"] for i in response.json()] == ["P-1"] and "@example.com" not in response.text
+    assert client.get("/api/explore").status_code == 401
+
+
 def test_an_unknown_person(client, as_staff):
     for path in ("/999", "/999/photo", "/999/items"):
         assert get(client, as_staff, path).status_code == 404

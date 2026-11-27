@@ -72,8 +72,10 @@ class Item(Base):
     stock_private: Mapped[bool] = mapped_column(default=False)  # quantity, reorder level, status
     history_private: Mapped[bool] = mapped_column(default=False)  # the movements
     creator_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), default=None)  # who added it
+    # Empty for items added before this was recorded.
+    created_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=utcnow)
     images: Mapped[list["ItemImage"]] = relationship(
-        lazy="selectin", order_by="ItemImage.id", cascade="all, delete-orphan"
+        lazy="selectin", order_by="[ItemImage.position, ItemImage.id]", cascade="all, delete-orphan"
     )
 
     @property
@@ -94,6 +96,7 @@ class ItemImage(Base):
     item_id: Mapped[int] = mapped_column(ForeignKey("items.id"), index=True)
     content_type: Mapped[str] = mapped_column(String(20))
     data: Mapped[bytes] = mapped_column(LargeBinary, deferred=True)
+    position: Mapped[int] = mapped_column(default=0)  # the lowest is the main picture
 
 
 class Movement(Base):

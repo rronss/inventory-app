@@ -16,7 +16,10 @@ COLUMNS = {
         "stock_private": "BOOLEAN NOT NULL DEFAULT FALSE",
         "history_private": "BOOLEAN NOT NULL DEFAULT FALSE",
         "creator_id": "INTEGER REFERENCES users(id)",
+        "created_at": "TIMESTAMP WITH TIME ZONE",  # unknown for what is already there
     },
+    # all 0 at first, so pictures stay in the order they were added
+    "item_images": {"position": "INTEGER NOT NULL DEFAULT 0"},
 }
 
 
@@ -25,6 +28,8 @@ def add_missing_columns(engine) -> list[str]:
     inspector = inspect(engine)
     with engine.begin() as connection:
         for table, columns in COLUMNS.items():
+            if not inspector.has_table(table):
+                continue  # create_all makes new tables, with all their columns
             existing = {column["name"] for column in inspector.get_columns(table)}
             for name, definition in columns.items():
                 if name not in existing:

@@ -123,6 +123,10 @@ class ItemEditIn(BaseModel):
     history_private: bool | None = None  # admin only
 
 
+class ImageOrderIn(BaseModel):
+    image_ids: list[int] = Field(max_length=20)
+
+
 class ItemOut(ItemIn):
     """quantity, reorder_level and low_stock are null when they are private and the reader is not an admin."""
 
@@ -135,6 +139,15 @@ class ItemOut(ItemIn):
     stock_private: bool
     history_private: bool
     image_ids: list[int]
+
+
+class ExploreItemOut(ItemOut):
+    """A public item, with who added it, if that is known."""
+
+    added_by_id: int | None
+    added_by: str | None
+    added_by_photo_version: int | None
+    created_at: datetime | None
 
 
 class MovementIn(BaseModel):

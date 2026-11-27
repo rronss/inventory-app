@@ -6,11 +6,12 @@ from .activity import named, record
 from .db import get_db
 from .models import ADMIN, Item, Movement, User
 from .privacy import can_see_history, can_see_stock, item_view
-from .schemas import ItemEditIn, ItemIn, ItemOut, MovementIn, MovementOut, RecentMovementOut
+from .schemas import ExploreItemOut, ItemEditIn, ItemIn, ItemOut, MovementIn, MovementOut, RecentMovementOut
 from .security import current_user, may_add_items, may_edit_items, may_move_stock, require_admin
 
 router = APIRouter(prefix="/api/items", dependencies=[Depends(current_user)])
 movements_router = APIRouter(prefix="/api/movements", dependencies=[Depends(current_user)])
+explore_router = APIRouter(prefix="/api/explore", dependencies=[Depends(current_user)])
 
 
 def item_or_404(db: Session, item_id: int) -> Item:
@@ -123,3 +124,24 @@ def recent_movements(
     if user.role != ADMIN:
         query = query.where(Movement.item.has(Item.history_private.is_(False)))
     return db.scalars(query).all()
+
+
+@explore_router.get("", response_model=list[ExploreItemOut])
+def explore(db: Session = Depends(get_db), me: User = Depends(current_user)):
+    """Every public item, yours included, newest first. An item whose stock is private is not listed here."""
+    query = (
+        select(Item, User)
+        .outerjoin(User, Item.creator_id == User.id)
+        .where(Item.stock_private.is_(False))
+        .order_by(Item.id.desc())
+    )
+    return [
+        ExploreItemOut(
+            **item_view(item, me).model_dump(),
+            added_by_id=person.id if person else None,
+            added_by=person.username if person else None,
+            added_by_photo_version=person.photo_version if person else None,
+            created_at=item.created_at,
+        )
+        for item, person in db.execute(query)
+    ]
