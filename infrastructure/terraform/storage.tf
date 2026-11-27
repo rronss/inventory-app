@@ -8,7 +8,7 @@ locals {
 resource "aws_s3_bucket" "this" {
   for_each      = local.buckets
   bucket        = each.value
-  force_destroy = each.key == "transfer" # never delete the pictures along with the bucket
+  force_destroy = each.key == "transfer" || var.allow_destroy # pictures go with the bucket only when asked
 }
 
 resource "aws_s3_bucket_public_access_block" "this" {

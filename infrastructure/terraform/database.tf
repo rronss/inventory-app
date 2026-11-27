@@ -25,8 +25,8 @@ resource "aws_db_instance" "main" {
 
   backup_retention_period   = var.db_backup_days
   copy_tags_to_snapshot     = true
-  deletion_protection       = true
-  skip_final_snapshot       = false
+  deletion_protection       = !var.allow_destroy
+  skip_final_snapshot       = !var.final_snapshot
   final_snapshot_identifier = "${var.name}-final"
 }
 

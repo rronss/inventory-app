@@ -80,6 +80,15 @@ Calculator before applying.
 
 ## Removing it
 
-The database has deletion protection, and the picture bucket is not emptied by Terraform. Turn the protection off in
-`database.tf`, apply, empty the bucket, then `terraform destroy`. A last database snapshot named `crate-final` is kept
-and billed until you delete it.
+This deletes the database and every picture. Delete the domain's DNS record first, so it does not point at an
+address you have given up. Then lift the protections, and destroy:
+
+```bash
+cd infrastructure/terraform
+terraform apply -var allow_destroy=true -var final_snapshot=false
+terraform destroy -var allow_destroy=true -var final_snapshot=false
+```
+
+Leave `-var final_snapshot=false` out to keep a last database snapshot, `crate-final`; it is billed until you delete
+it, and it must be gone before another one can be made. The secrets in Parameter Store are not Terraform's: they stay
+for next time.

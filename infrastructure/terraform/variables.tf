@@ -36,6 +36,18 @@ variable "db_storage_gb" {
   default = 20
 }
 
+variable "allow_destroy" {
+  description = "Lift the protections before `terraform destroy`: database deletion protection, and the pictures bucket's."
+  type        = bool
+  default     = false
+}
+
+variable "final_snapshot" {
+  description = "Keep a last database snapshot when the database is destroyed. It is billed until deleted."
+  type        = bool
+  default     = true
+}
+
 variable "db_backup_days" {
   type    = number
   default = 7
