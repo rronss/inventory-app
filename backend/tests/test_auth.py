@@ -77,3 +77,10 @@ def test_first_admin_is_seeded_once(session, monkeypatch):
     monkeypatch.setattr(main, "get_settings", lambda: settings)
     assert seed_admin(session) is True
     assert seed_admin(session) is False
+
+
+def test_a_rejected_secret_is_not_written_into_the_error():
+    with pytest.raises(ValidationError) as refused:
+        Settings(SECRET_KEY="too-short-secret", _env_file=None)
+    assert "too-short-secret" not in str(refused.value) and "SECRET_KEY" in str(refused.value)
+

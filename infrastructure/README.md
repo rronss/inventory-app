@@ -1,7 +1,6 @@
 # Deploying Crate to AWS
 
-**Terraform** creates the AWS resources. **Ansible** sets up the server and runs the app. Nothing here has been
-applied to an AWS account yet.
+**Terraform** creates the AWS resources. **Ansible** sets up the server and runs the app.
 
 ```
 Internet --HTTPS--> EC2: Caddy -> frontend -> backend -> RDS PostgreSQL (private)
@@ -45,16 +44,19 @@ The state file stays on your computer and is not committed.
 Terraform never sees these. The database password is made by RDS itself.
 
 ```bash
-aws ssm put-parameter --region us-east-1 --type SecureString --name /crate/SECRET_KEY --value "$(openssl rand -hex 32)"
+infrastructure/add-secrets.sh
 ```
 
-Add `/crate/ADMIN_EMAIL` and `/crate/ADMIN_PASSWORD` the same way, or in the console under Systems Manager >
-Parameter Store, which keeps the password out of your shell history.
-
-Add the widget's keys as `/crate/TURNSTILE_SITE_KEY` and `/crate/TURNSTILE_SECRET_KEY`. To deploy without the bot
-check, pass `-e bot_check=false`.
+It makes `SECRET_KEY`, asks for the admin email and password, and for the Turnstile widget's keys, and stores them
+under `/crate/` in Parameter Store. Without the Turnstile keys, deploy with `-e bot_check=false`.
 
 ## 3. Deploy
+
+```bash
+infrastructure/deploy.sh
+```
+
+or step by step:
 
 ```bash
 cd infrastructure/ansible
@@ -63,6 +65,12 @@ ansible-playbook site.yml -e @tf-outputs.json
 ```
 
 Run the playbook again to deploy a new version. `--check` shows what would change.
+
+**On macOS**, set these first, or Ansible's workers crash ("A worker was found in a dead state"):
+
+```bash
+export OS_ACTIVITY_MODE=disable OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES no_proxy='*'
+```
 
 ## What it costs
 

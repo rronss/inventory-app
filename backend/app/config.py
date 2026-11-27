@@ -6,7 +6,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    # a rejected setting is often a secret: keep its value out of the error, which ends up in the logs
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore", hide_input_in_errors=True)
 
     # No default on purpose: the app must not start with a key someone could guess.
     SECRET_KEY: str = Field(min_length=32)

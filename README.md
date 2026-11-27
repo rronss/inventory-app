@@ -143,7 +143,7 @@ The pictures are drawn by `sample-data/draw.py` (needs Pillow).
 ## Deploy
 
 [infrastructure/](infrastructure/README.md) holds Terraform (AWS resources) and Ansible (server setup and
-deployment). It has not been applied yet.
+deployment).
 
 ## CI
 
