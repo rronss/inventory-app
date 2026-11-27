@@ -10,6 +10,7 @@ COLUMNS = {
         "can_add_items": "BOOLEAN NOT NULL DEFAULT TRUE",
         "can_move_stock": "BOOLEAN NOT NULL DEFAULT TRUE",
         "can_edit_items": "BOOLEAN NOT NULL DEFAULT TRUE",
+        "own_items_only": "BOOLEAN NOT NULL DEFAULT FALSE",
         "chat_from": "VARCHAR(10) NOT NULL DEFAULT 'everyone'",
     },
     "items": {

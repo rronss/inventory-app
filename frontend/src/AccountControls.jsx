@@ -7,6 +7,7 @@ const SWITCHES = [
   ['can_move_stock', 'Stock in and out'],
   ['can_edit_items', 'Edit items and their pictures'],
 ]
+const OWN_ONLY = ['own_items_only', 'Stock and edits only for items they added']
 const ACTIONS = {
   sign_in: 'Signed in',
   sign_in_failed: 'Wrong password at sign-in',
@@ -65,7 +66,8 @@ export default function AccountControls({ id, handle, onRole }) {
     event.preventDefault()
     const form = new FormData(event.target)
     // the switches of an admin are not sent: they have no effect and are kept as they were
-    const switches = role === 'admin' ? {} : Object.fromEntries(SWITCHES.map(([field]) => [field, form.has(field)]))
+    const fields = [...SWITCHES, OWN_ONLY]
+    const switches = role === 'admin' ? {} : Object.fromEntries(fields.map(([field]) => [field, form.has(field)]))
     try {
       const updated = await api(`/users/${id}/permissions`, { method: 'PATCH', body: { role, ...switches } })
       setAccount(updated)
@@ -95,6 +97,10 @@ export default function AccountControls({ id, handle, onRole }) {
               {label}
             </label>
           ))}
+          <label key={`${OWN_ONLY[0]}-${role === 'admin'}`} className="check">
+            <input type="checkbox" name={OWN_ONLY[0]} defaultChecked={role !== 'admin' && account[OWN_ONLY[0]]} disabled={role === 'admin'} />
+            {OWN_ONLY[1]}
+          </label>
           <button type="submit">Save permissions</button>
           {saved && <p className="ok">Permissions saved</p>}
         </form>

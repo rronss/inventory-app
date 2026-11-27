@@ -9,7 +9,7 @@ from .inbox import item_changed, item_removed, stock_moved
 from .models import ADMIN, Item, Movement, User
 from .privacy import can_see_history, can_see_stock, item_view
 from .schemas import ExploreItemOut, ItemEditIn, ItemIn, ItemOut, MovementIn, MovementOut, RecentMovementOut
-from .security import current_user, may_add_items, may_edit_items, may_move_stock, require_admin
+from .security import check_hands_on, current_user, may_add_items, may_edit_items, may_move_stock, require_admin
 
 router = APIRouter(prefix="/api/items", dependencies=[Depends(current_user)])
 movements_router = APIRouter(prefix="/api/movements", dependencies=[Depends(current_user)])
@@ -53,6 +53,7 @@ def get_item(item_id: int, db: Session = Depends(get_db), user: User = Depends(c
 @router.patch("/{item_id}", response_model=ItemOut)
 def edit_item(item_id: int, body: ItemEditIn, db: Session = Depends(get_db), user: User = Depends(may_edit_items)):
     item = item_or_404(db, item_id)
+    check_hands_on(item, user)
     changes = body.model_dump(exclude_none=True)
     if {"stock_private", "history_private"} & changes.keys() and user.role != ADMIN:
         raise HTTPException(403, "Only an admin can make information public or private")
@@ -91,6 +92,7 @@ def remove_item(item_id: int, db: Session = Depends(get_db), user: User = Depend
 def move_stock(item_id: int, body: MovementIn, db: Session = Depends(get_db), user: User = Depends(may_move_stock)):
     # Not for private stock: "Not enough stock" would let anyone work out the quantity.
     item = item_or_404(db, item_id)
+    check_hands_on(item, user)
     if not can_see_stock(item, user):
         raise HTTPException(403, "The stock of this item is private")
     was_low, was_empty = item.low_stock, item.quantity == 0

@@ -104,8 +104,8 @@ export default function ItemEdit({ id, user, onExpired }) {
       {error && <p className="error">{error}</p>}
       {!item && !error && <p className="hint">Loading…</p>}
 
-      {item && !may(user, 'can_edit_items') && <p className="hint">You don't have permission to edit items.</p>}
-      {item && may(user, 'can_edit_items') && (
+      {item && !may(user, 'can_edit_items', item) && <p className="hint">You don't have permission to edit this item.</p>}
+      {item && may(user, 'can_edit_items', item) && (
         <>
           <form className="card edit-form" onSubmit={save}>
             <h2>Details</h2>

@@ -2,7 +2,9 @@ export const itemLink = (item) => `#/inventory/item/${item.id}`
 export const personLink = (id) => `#/people/${id}`
 export const chatLink = (id) => `#/inbox/chats/${id}`
 // What the buttons offer. The server checks the same thing and has the last word.
-export const may = (user, permission) => user.role === 'admin' || user[permission]
+// With an item: an account limited to its own items may change only those.
+export const may = (user, permission, item) =>
+  user.role === 'admin' || (user[permission] && (!item || !user.own_items_only || item.creator_id === user.id))
 
 export function MoveStock({ item, send }) {
   function move(direction, event) {

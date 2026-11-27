@@ -8,13 +8,21 @@ from sqlalchemy.pool import StaticPool
 
 os.environ.setdefault("SECRET_KEY", "test-only-key-that-is-long-enough-0123456789")
 os.environ["PICTURE_STORAGE"] = "db"  # never a real bucket, whatever the shell has set
+os.environ["TURNSTILE_SITE_KEY"] = os.environ["TURNSTILE_SECRET_KEY"] = ""  # nor a real bot check
+os.environ["TRUSTED_PROXIES"] = "0"
 
 from app.db import Base, get_db  # noqa: E402
 from app.main import app  # noqa: E402
 from app.models import ADMIN, STAFF, User  # noqa: E402
+from app.ratelimit import limiter  # noqa: E402
 from app.security import create_token, hash_password  # noqa: E402
 
 PASSWORD = "test-password-1"
+
+
+@pytest.fixture(autouse=True)
+def fresh_attempt_counts():
+    limiter.reset()
 
 
 @pytest.fixture

@@ -55,7 +55,10 @@ Open http://localhost:8200 and log in with the admin from your `.env`.
 
 ## Rules the app enforces
 
-- Anyone can register. A registered account is always staff. The first admin comes from `.env`.
+- Anyone can register. A registered account is always staff, and can change stock and edit only the items it added;
+  an admin can lift that under **Permissions**. The first admin comes from `.env`.
+- After 5 wrong passwords for an account (20 from one address) sign-in waits 15 minutes. One address can register 10
+  times an hour. With Cloudflare Turnstile keys set, registering also needs a robot check.
 - Every account has a unique username, which is what other people see. Email addresses are used to sign in
   and are never shown or sent back by the API. You can sign in with the username or the email.
 - The first admin's username is `admin`.
@@ -80,7 +83,7 @@ Open http://localhost:8200 and log in with the admin from your `.env`.
 
 | Method and path | Who |
 |---|---|
-| `POST /api/auth/register`, `POST /api/auth/login` | anyone |
+| `GET /api/auth/config`, `POST /api/auth/register`, `POST /api/auth/login` | anyone |
 | `GET /api/auth/me` | the logged-in user |
 | `PATCH /api/auth/me`, `POST /api/auth/password`, `POST /api/auth/email`, `GET`, `PUT` and `DELETE /api/auth/photo` | the logged-in user, for themselves |
 | `GET /api/users`, `POST /api/users`, `GET /api/users/{id}` | admin |

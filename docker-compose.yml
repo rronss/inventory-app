@@ -24,6 +24,9 @@ services:
       PICTURE_STORAGE: ${PICTURE_STORAGE:-db}
       PICTURE_BUCKET: ${PICTURE_BUCKET:-}
       AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-us-east-1}
+      TRUSTED_PROXIES: 1 # the frontend's nginx
+      TURNSTILE_SITE_KEY: ${TURNSTILE_SITE_KEY:-}
+      TURNSTILE_SECRET_KEY: ${TURNSTILE_SECRET_KEY:-}
     depends_on:
       db:
         condition: service_healthy

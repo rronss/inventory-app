@@ -36,6 +36,14 @@ class UserIn(BaseModel):
     username: Username
 
 
+class RegisterIn(UserIn):
+    turnstile_token: str = Field(default="", max_length=2048)
+
+
+class SignUpConfigOut(BaseModel):
+    turnstile_site_key: str  # empty when there is no bot check
+
+
 class UserOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
@@ -47,6 +55,7 @@ class UserOut(BaseModel):
     can_add_items: bool
     can_move_stock: bool
     can_edit_items: bool
+    own_items_only: bool
 
 
 class PermissionsIn(BaseModel):
@@ -56,6 +65,7 @@ class PermissionsIn(BaseModel):
     can_add_items: bool | None = None
     can_move_stock: bool | None = None
     can_edit_items: bool | None = None
+    own_items_only: bool | None = None
 
 
 class ActivityOut(BaseModel):
@@ -147,6 +157,7 @@ class ItemOut(ItemIn):
     stock_private: bool
     history_private: bool
     image_ids: list[int]
+    creator_id: int | None  # who added it
 
 
 class ExploreItemOut(ItemOut):

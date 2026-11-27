@@ -26,10 +26,10 @@ def test_a_new_item_can_have_a_description_and_no_images(widget):
     assert (widget["description"], widget["image_ids"]) == ("Spare part", [])
 
 
-def test_anyone_signed_in_changes_the_description(client, widget, as_staff, other):
+def test_staff_change_the_description_but_a_new_sign_up_cannot(client, widget, as_staff, other):
     url = f"/api/items/{widget['id']}"
     assert client.patch(url, json={"description": "  Blue one  "}, headers=as_staff).json()["description"] == "Blue one"
-    assert client.patch(url, json={"description": "Green one"}, headers=other).status_code == 200
+    assert client.patch(url, json={"description": "Green one"}, headers=other).status_code == 403  # not their item
     assert client.patch(url, json={"description": "x" * 1001}, headers=as_staff).status_code == 422
     assert client.patch(url, json={"description": "no sign-in"}).status_code == 401
 

@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from .config import get_settings
 from .db import get_db
-from .models import ADMIN, User
+from .models import ADMIN, Item, User
 
 ALGORITHM = "HS256"
 bearer = HTTPBearer(auto_error=False)
@@ -58,6 +58,12 @@ def require_permission(field: str, action: str):
 may_add_items = require_permission("can_add_items", "add items")
 may_move_stock = require_permission("can_move_stock", "change stock")
 may_edit_items = require_permission("can_edit_items", "edit items")
+
+
+def check_hands_on(item: Item, user: User) -> None:
+    """An account limited to its own items may change only what it added."""
+    if user.role != ADMIN and user.own_items_only and item.creator_id != user.id:
+        raise HTTPException(403, "You can change only the items you added")
 
 
 def require_admin(user: User = Depends(current_user)) -> User:

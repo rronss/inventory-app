@@ -96,7 +96,7 @@ export default function Item({ id, user, onExpired }) {
         <div className="product-side">
           <div className="product-head">
             <h1>{item.name}</h1>
-            {may(user, 'can_edit_items') && (
+            {may(user, 'can_edit_items', item) && (
               <a className="edit-button" href={`#/inventory/item/${item.id}/edit`}>
                 Edit
               </a>
@@ -118,10 +118,12 @@ export default function Item({ id, user, onExpired }) {
                   <strong>{item.quantity}</strong> in stock
                 </p>
                 <p className="hint">Reorder at {item.reorder_level}</p>
-                {may(user, 'can_move_stock') ? (
+                {may(user, 'can_move_stock', item) ? (
                   <MoveStock item={item} send={send} />
                 ) : (
-                  <p className="hint">You don't have permission to change stock.</p>
+                  <p className="hint">
+                    {may(user, 'can_move_stock') ? 'You can change only the items you added.' : "You don't have permission to change stock."}
+                  </p>
                 )}
               </div>
             </>

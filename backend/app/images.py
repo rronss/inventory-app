@@ -10,7 +10,7 @@ from .items import item_or_404
 from .models import ItemImage, User
 from .privacy import item_view
 from .schemas import ImageOrderIn, ItemOut
-from .security import current_user, may_edit_items
+from .security import check_hands_on, current_user, may_edit_items
 
 MAX_IMAGE_BYTES = 2 * 1024 * 1024  # nginx.conf allows a little more, so this message is the one people see
 MAX_IMAGES = 5
@@ -60,6 +60,7 @@ def add_image(
     user: User = Depends(may_edit_items),
 ):
     item = item_or_404(db, item_id)
+    check_hands_on(item, user)
     content_type = image_type(data)
     if content_type is None:
         raise HTTPException(415, "The image must be a PNG, JPEG or WebP file")
@@ -81,6 +82,7 @@ def arrange_images(
 ):
     """The item's pictures in the order to show them. The first is the main one."""
     item = item_or_404(db, item_id)
+    check_hands_on(item, user)
     if sorted(body.image_ids) != sorted(item.image_ids):
         raise HTTPException(422, "List each of this item's images once")
     if body.image_ids != item.image_ids:
@@ -96,6 +98,7 @@ def arrange_images(
 @router.delete("/{image_id}", response_model=ItemOut)
 def delete_image(item_id: int, image_id: int, db: Session = Depends(get_db), user: User = Depends(may_edit_items)):
     item = item_or_404(db, item_id)
+    check_hands_on(item, user)
     picture = _image_or_404(db, item_id, image_id)
     key = picture.s3_key
     item.images.remove(picture)

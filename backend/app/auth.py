@@ -1,13 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from . import storage
+from . import botcheck, storage
 from .activity import record
+from .config import get_settings
 from .db import get_db
 from .images import image_type, uploaded_bytes
 from .inbox import notify
 from .models import STAFF, Activity, User, UserPhoto
+from .ratelimit import client_address, limiter
 from .schemas import (
     ActivityOut,
     EmailIn,
@@ -16,6 +18,8 @@ from .schemas import (
     PasswordIn,
     PermissionsIn,
     ProfileIn,
+    RegisterIn,
+    SignUpConfigOut,
     TokenOut,
     UserIn,
     UserOut,
@@ -35,7 +39,7 @@ def _check_username_free(db: Session, username: str, user_id: int | None = None)
         raise HTTPException(409, "That username is taken")
 
 
-def _create_staff(db: Session, body: UserIn, created_by: str) -> User:
+def _create_staff(db: Session, body: UserIn, created_by: str, own_items_only: bool = False) -> User:
     email = body.email.lower()
     if db.scalar(select(User).where(User.email == email)):
         raise HTTPException(409, "That email already has an account")
@@ -46,6 +50,7 @@ def _create_staff(db: Session, body: UserIn, created_by: str) -> User:
         name=body.name.strip(),
         password_hash=hash_password(body.password),
         role=STAFF,
+        own_items_only=own_items_only,
     )
     db.add(user)
     db.flush()
@@ -55,24 +60,41 @@ def _create_staff(db: Session, body: UserIn, created_by: str) -> User:
 
 
 @router.post("/auth/login", response_model=TokenOut)
-def login(body: LoginIn, db: Session = Depends(get_db)):
+def login(body: LoginIn, request: Request, db: Session = Depends(get_db)):
     login = body.login.strip()
     by_email = select(User).where(User.email == login.lower())
     user = db.scalar(by_email if "@" in login else _by_username(login))
+    # Counted before the password is checked, so many tries at once cannot slip through.
+    settings, address = get_settings(), client_address(request)
+    one_account = f"login {address} {user.id if user else login.lower()}"
+    this_address = f"login {address}"
+    limiter.take(
+        (one_account, settings.LOGIN_ATTEMPTS, 900), (this_address, settings.LOGIN_ATTEMPTS_PER_ADDRESS, 900)
+    )
     if user is None or not verify_password(body.password, user.password_hash):
         if user is not None:  # what was typed is never written down
             record(db, user.id, "sign_in_failed")
             db.commit()
         raise HTTPException(401, "Wrong sign-in details")  # one message, so accounts cannot be probed
+    limiter.forget(one_account)
+    limiter.give_back(this_address)  # only failures count
     record(db, user.id, "sign_in")
     db.commit()
     return TokenOut(access_token=create_token(user.id))
 
 
+@router.get("/auth/config", response_model=SignUpConfigOut)
+def sign_up_config():
+    return SignUpConfigOut(turnstile_site_key=get_settings().TURNSTILE_SITE_KEY)
+
+
 @router.post("/auth/register", response_model=TokenOut, status_code=201)
-def register(body: UserIn, db: Session = Depends(get_db)):
-    """Public sign-up. The new account is always staff: the role cannot be chosen."""
-    user = _create_staff(db, body, "registered")
+def register(body: RegisterIn, request: Request, db: Session = Depends(get_db)):
+    """Public sign-up. The new account is always staff, and limited to the items it adds."""
+    address = client_address(request)
+    limiter.take((f"register {address}", get_settings().REGISTRATIONS_PER_HOUR, 3600))
+    botcheck.check(body.turnstile_token, address)
+    user = _create_staff(db, body, "registered", own_items_only=True)
     return TokenOut(access_token=create_token(user.id))
 
 
@@ -181,7 +203,12 @@ def _account_or_404(db: Session, user_id: int) -> User:
     return account
 
 
-PERMISSIONS = {"can_add_items": "add items", "can_move_stock": "stock in/out", "can_edit_items": "edit items"}
+PERMISSIONS = {
+    "can_add_items": "add items",
+    "can_move_stock": "stock in/out",
+    "can_edit_items": "edit items",
+    "own_items_only": "own items only",
+}
 
 
 @router.get("/users/{user_id}", response_model=UserOut, dependencies=[Depends(require_admin)])

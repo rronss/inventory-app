@@ -1,10 +1,20 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
 import { api, setToken } from './api.js'
+import BotCheck from './BotCheck.jsx'
 import { usernameRule } from './username.js'
 
 export default function Register({ onSignedIn }) {
   const [error, setError] = useState('')
+  const [siteKey, setSiteKey] = useState('') // set when the server asks for a robot check
+  const [token, setBotToken] = useState('')
+  const [attempt, setAttempt] = useState(0)
+
+  useEffect(() => {
+    api('/auth/config')
+      .then((config) => setSiteKey(config.turnstile_site_key))
+      .catch(() => {}) // the server still insists on the check if it wants one
+  }, [])
 
   async function submit(event) {
     event.preventDefault()
@@ -15,11 +25,15 @@ export default function Register({ onSignedIn }) {
       return
     }
     try {
-      const { access_token } = await api('/auth/register', { method: 'POST', body: account })
+      const body = { ...account, turnstile_token: token }
+      delete body['cf-turnstile-response'] // the widget adds its own field to the form
+      const { access_token } = await api('/auth/register', { method: 'POST', body })
       setToken(access_token)
       await onSignedIn()
     } catch (err) {
       setError(err.message)
+      setBotToken('')
+      setAttempt((n) => n + 1) // a token works once
     }
   }
 
@@ -46,6 +60,7 @@ export default function Register({ onSignedIn }) {
         Repeat the password
         <input name="confirm" type="password" autoComplete="new-password" required />
       </label>
+      {siteKey && <BotCheck key={attempt} siteKey={siteKey} onToken={setBotToken} onProblem={setError} />}
       {error && <p className="error">{error}</p>}
       <button type="submit" className="wide">
         Create account

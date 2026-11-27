@@ -13,3 +13,6 @@ app_dir: /opt/crate
 
 # Without a domain there is no HTTPS, and passwords cross the internet unencrypted. Only for a short test.
 allow_http: false
+
+# Cloudflare Turnstile on sign-up. Needs TURNSTILE_SITE_KEY and TURNSTILE_SECRET_KEY in Parameter Store.
+bot_check: true

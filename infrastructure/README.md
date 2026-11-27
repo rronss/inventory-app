@@ -13,7 +13,9 @@ No SSH: Ansible reaches the server through AWS Systems Manager. The server runs
 
 ## Before the first deployment
 
-- **Not ready for the public yet:** anyone can register, and sign-in attempts are not limited.
+- **Public sign-up:** sign-in and sign-up attempts are limited, and new accounts can change only the items they
+  add. They can still see public items and people, and send messages.
+- A Cloudflare **Turnstile** widget for the domain (free), for the bot check on sign-up.
 - **Images:** the playbook pulls `ghcr.io/rronss/inventory-app-backend` and `-frontend` (arm64), which the
   `images` workflow publishes after `ci` passes on `main`. Both packages must be public, or the server cannot pull
   them. To deploy an earlier version, pass `-e image_tag=<commit>`.
@@ -33,7 +35,9 @@ terraform apply tfplan
 ```
 
 Then, in Cloudflare, add an `A` record for the domain with the `public_ip` output, set to **DNS only** (grey cloud),
-so Caddy can get its certificate directly. If you later turn Cloudflare's proxy on, set SSL/TLS to **Full (strict)**.
+so Caddy can get its certificate directly. Before turning Cloudflare's proxy on, set SSL/TLS to **Full (strict)** and
+tell Caddy to trust Cloudflare's addresses: otherwise every visitor seems to come from Cloudflare and they share
+one attempt limit.
 The state file stays on your computer and is not committed.
 
 ## 2. Add the secrets (once)
@@ -46,6 +50,9 @@ aws ssm put-parameter --region us-east-1 --type SecureString --name /crate/SECRE
 
 Add `/crate/ADMIN_EMAIL` and `/crate/ADMIN_PASSWORD` the same way, or in the console under Systems Manager >
 Parameter Store, which keeps the password out of your shell history.
+
+Add the widget's keys as `/crate/TURNSTILE_SITE_KEY` and `/crate/TURNSTILE_SECRET_KEY`. To deploy without the bot
+check, pass `-e bot_check=false`.
 
 ## 3. Deploy
 

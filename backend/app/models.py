@@ -28,6 +28,8 @@ class User(Base):
     can_add_items: Mapped[bool] = mapped_column(default=True)
     can_move_stock: Mapped[bool] = mapped_column(default=True)
     can_edit_items: Mapped[bool] = mapped_column(default=True)
+    # Stock and edits only for items they added. Set for people who register themselves.
+    own_items_only: Mapped[bool] = mapped_column(default=False)
     chat_from: Mapped[str] = mapped_column(String(10), default="everyone")  # or "friends"
     # Counts uploads, so the page knows when to fetch the photo again. 0 means there is none.
     photo_version: Mapped[int] = mapped_column(default=0)

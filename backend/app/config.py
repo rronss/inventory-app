@@ -18,11 +18,25 @@ class Settings(BaseSettings):
     # Where picture files are kept. With "s3", boto3 finds the credentials and region itself.
     PICTURE_STORAGE: Literal["db", "s3"] = "db"
     PICTURE_BUCKET: str = ""
+    # How many of our own proxies stand in front of the app (see ratelimit.client_address). 0: none.
+    TRUSTED_PROXIES: int = Field(default=0, ge=0)
+    LOGIN_ATTEMPTS: int = 5  # wrong passwords for one account from one address, per 15 minutes
+    LOGIN_ATTEMPTS_PER_ADDRESS: int = 20  # across all accounts, per 15 minutes
+    REGISTRATIONS_PER_HOUR: int = 10  # per address
+    # Cloudflare Turnstile on sign-up. Both or neither.
+    TURNSTILE_SITE_KEY: str = ""
+    TURNSTILE_SECRET_KEY: str = ""
 
     @model_validator(mode="after")
     def bucket_named(self):
         if self.PICTURE_STORAGE == "s3" and not self.PICTURE_BUCKET:
             raise ValueError("PICTURE_STORAGE=s3 needs PICTURE_BUCKET")
+        return self
+
+    @model_validator(mode="after")
+    def both_turnstile_keys(self):
+        if bool(self.TURNSTILE_SITE_KEY) != bool(self.TURNSTILE_SECRET_KEY):
+            raise ValueError("Set both TURNSTILE_SITE_KEY and TURNSTILE_SECRET_KEY, or neither")
         return self
 
 
