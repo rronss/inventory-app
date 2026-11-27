@@ -22,13 +22,6 @@ export default function EditProfile({ user, save, notice, fail, onSwitch }) {
   return (
     <section className="card narrow">
       <ul className="settings">
-        <Row label="Name" value={user.name || 'Not set'} {...row('name')}>
-          {notice}
-          <form key={user.name} onSubmit={(e) => saveField(e, 'name', 'Name saved')}>
-            <input name="name" defaultValue={user.name} maxLength="80" placeholder="Name" aria-label="Name" />
-            <button type="submit">Save name</button>
-          </form>
-        </Row>
         <Row label="Bio" value={user.bio ? 'Added' : 'Not set'} {...row('bio')}>
           {notice}
           <form key={user.bio} onSubmit={(e) => saveField(e, 'bio', 'Bio saved')}>

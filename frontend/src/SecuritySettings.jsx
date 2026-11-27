@@ -5,6 +5,8 @@ const field = (form, name) => new FormData(form).get(name)
 
 export default function SecuritySettings({ user, save, notice, onSwitch }) {
   const row = useRows(onSwitch)
+  // a saved message belongs next to what was saved: in an open row, or by the chat choice
+  const open = ['password', 'email', 'username'].find((id) => row(id).open) || ''
 
   function changePassword(event) {
     event.preventDefault()
@@ -58,12 +60,31 @@ export default function SecuritySettings({ user, save, notice, onSwitch }) {
       </section>
 
       <section className="card narrow">
+        <h2>Friends privacy</h2>
+        {open === '' && notice}
+        <label>
+          Who can chat me
+          <select
+            value={user.chat_from}
+            onChange={(e) => save(null, '/auth/me', 'PATCH', { chat_from: e.target.value }, 'Saved')}
+          >
+            <option value="everyone">Everyone</option>
+            <option value="friends">Friends only</option>
+          </select>
+        </label>
+      </section>
+
+      <section className="card narrow">
         <h2>Privacy</h2>
         <ul className="facts">
           <li>Colleagues who are signed in can see your name, username, role, bio and photo.</li>
           <li>They can also see which items you added.</li>
           <li>Your username appears next to every stock change you make.</li>
           <li>Admins can see a log of your sign-ins and the changes you make.</li>
+          <li>In the app, only you and the person you write to can see a message.</li>
+          <li>Only you can see who your friends are and your requests. Others see how many friends you have.</li>
+          <li>Blocking someone stops friend requests and messages between you. They are not told.</li>
+          <li>You choose above who can start or continue a chat with you.</li>
           <li>Your email is only for signing in. It is never shown to anyone.</li>
           <li>Your sign-in ends when you log out, close the tab, or after an hour.</li>
         </ul>

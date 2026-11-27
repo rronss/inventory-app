@@ -34,7 +34,7 @@ def test_colleagues_see_who_someone_is_but_never_an_email(client, added, staff, 
     client.put("/api/auth/photo", content=png, headers=as_staff)
     record = get(client, as_admin, f"/{staff.id}").json()
     expected = {"id": staff.id, "username": "staff", "name": "Dana", "role": "staff", "bio": "Mornings"}
-    assert record == {**expected, "photo_version": 1}
+    assert record == {**expected, "photo_version": 1, "friends": 0}
     assert get(client, as_admin, f"/{staff.id}/photo").content == png
     assert "@example.com" not in get(client, as_admin, f"/{staff.id}/items").text
 
@@ -72,6 +72,15 @@ def test_explore_leaves_out_private_items_for_everyone(client, added, as_admin, 
     response = client.get("/api/explore", headers=as_staff)
     assert [i["sku"] for i in response.json()] == ["P-1"] and "@example.com" not in response.text
     assert client.get("/api/explore").status_code == 401
+
+
+def test_a_record_counts_friends_without_naming_them(client, staff, admin, as_staff, as_admin):
+    client.post(f"/api/friends/{admin.id}", headers=as_staff)
+    assert get(client, as_staff, f"/{admin.id}").json()["friends"] == 0  # a request is not a friendship
+    client.post(f"/api/friends/{staff.id}/accept", headers=as_admin)
+    for person in (staff, admin):
+        record = get(client, as_staff, f"/{person.id}").json()
+        assert record["friends"] == 1 and isinstance(record["friends"], int)
 
 
 def test_an_unknown_person(client, as_staff):

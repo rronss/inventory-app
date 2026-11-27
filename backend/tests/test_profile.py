@@ -93,6 +93,7 @@ def test_old_databases_gain_the_new_columns_once():
         "users.can_add_items",
         "users.can_move_stock",
         "users.can_edit_items",
+        "users.chat_from",
         "items.description",
         "items.stock_private",
         "items.history_private",

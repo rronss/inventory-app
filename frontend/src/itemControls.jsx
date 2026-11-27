@@ -1,5 +1,6 @@
 export const itemLink = (item) => `#/inventory/item/${item.id}`
 export const personLink = (id) => `#/people/${id}`
+export const chatLink = (id) => `#/inbox/chats/${id}`
 // What the buttons offer. The server checks the same thing and has the last word.
 export const may = (user, permission) => user.role === 'admin' || user[permission]
 

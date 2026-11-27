@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 from .activity import record
 from .db import get_db
 from .images import image_type, uploaded_bytes
+from .inbox import notify
 from .models import STAFF, Activity, User, UserPhoto
 from .schemas import (
     ActivityOut,
@@ -85,6 +86,8 @@ def update_profile(body: ProfileIn, db: Session = Depends(get_db), user: User = 
         user.name = body.name.strip()
     if body.bio is not None:
         user.bio = body.bio.strip()
+    if body.chat_from is not None:
+        user.chat_from = body.chat_from
     if body.username:
         _check_username_free(db, body.username, user.id)
         user.username = body.username
@@ -195,6 +198,7 @@ def change_permissions(
         ]
         record(db, account.id, "permissions_changed", f"by {admin.username}: {', '.join(words)}")
         record(db, admin.id, "changed_permissions", f"of {account.username}: {', '.join(words)}")
+        notify(db, account.id, "permissions_changed", f"{admin.username} changed your permissions: {', '.join(words)}")
         db.commit()
     return account
 

@@ -28,6 +28,7 @@ class User(Base):
     can_add_items: Mapped[bool] = mapped_column(default=True)
     can_move_stock: Mapped[bool] = mapped_column(default=True)
     can_edit_items: Mapped[bool] = mapped_column(default=True)
+    chat_from: Mapped[str] = mapped_column(String(10), default="everyone")  # or "friends"
     # Counts uploads, so the page knows when to fetch the photo again. 0 means there is none.
     photo_version: Mapped[int] = mapped_column(default=0)
 
@@ -56,6 +57,75 @@ class Activity(Base):
     action: Mapped[str] = mapped_column(String(40))
     detail: Mapped[str] = mapped_column(String(300), default="")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class Notification(Base):
+    """One alert in a person's inbox."""
+
+    __tablename__ = "notifications"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    kind: Mapped[str] = mapped_column(String(40))
+    text: Mapped[str] = mapped_column(String(300))
+    item_id: Mapped[int | None] = mapped_column(default=None)  # not a foreign key: the item may be removed
+    person_id: Mapped[int | None] = mapped_column(default=None)  # who a friend alert is about
+    is_read: Mapped[bool] = mapped_column(default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class Message(Base):
+    __tablename__ = "messages"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    sender_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    recipient_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
+    text: Mapped[str] = mapped_column(String(1000))
+    is_read: Mapped[bool] = mapped_column(default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class Friendship(Base):
+    """A friend request, and once accepted, the friendship. One row for the two people."""
+
+    __tablename__ = "friendships"
+    __table_args__ = (CheckConstraint("requester_id <> addressee_id", name="no_befriending_yourself"),)
+
+    requester_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
+    addressee_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True, index=True)
+    accepted: Mapped[bool] = mapped_column(default=False)
+
+
+class Update(Base):
+    """News for everyone: a system note (from the code) or an admin's message."""
+
+    __tablename__ = "updates"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    key: Mapped[str | None] = mapped_column(String(40), unique=True, default=None)  # system notes only
+    kind: Mapped[str] = mapped_column(String(10))
+    title: Mapped[str] = mapped_column(String(120))
+    text: Mapped[str] = mapped_column(String(1000))
+    author_id: Mapped[int | None] = mapped_column(ForeignKey("users.id"), default=None)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class UpdateRead(Base):
+    """How far each person has read."""
+
+    __tablename__ = "update_reads"
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
+    last_id: Mapped[int] = mapped_column(default=0)
+
+
+class Block(Base):
+    """One person blocking another: no friend requests or messages between them."""
+
+    __tablename__ = "blocks"
+
+    blocker_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
+    blocked_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True, index=True)
 
 
 class Item(Base):

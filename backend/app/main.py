@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from sqlalchemy import select
 
-from . import auth, images, items, people
+from . import auth, friends, images, inbox, items, messages, people, updates
 from .config import get_settings
 from .db import Base, get_engine, new_session
 from .models import ADMIN, User
@@ -28,6 +28,7 @@ async def lifespan(app: FastAPI):
     add_missing_columns(get_engine())
     with new_session() as session:
         seed_admin(session)
+        updates.seed_updates(session)
     yield
 
 
@@ -38,6 +39,10 @@ app.include_router(items.movements_router)
 app.include_router(items.explore_router)
 app.include_router(images.router)
 app.include_router(people.router)
+app.include_router(inbox.router)
+app.include_router(messages.router)
+app.include_router(friends.router)
+app.include_router(updates.router)
 
 
 @app.get("/health")

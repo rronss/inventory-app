@@ -1,24 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
-
 import Avatar from './Avatar.jsx'
+import useDropdown from './useDropdown.js'
 
 // The profile icon at the right of the top bar. Clicking it opens the account's pages.
 export default function UserMenu({ user, current, onSignOut }) {
-  const [open, setOpen] = useState(false)
-  const box = useRef(null)
-
-  // a click anywhere else, or Esc, closes it
-  useEffect(() => {
-    if (!open) return undefined
-    const away = (event) => !box.current.contains(event.target) && setOpen(false)
-    const escape = (event) => event.key === 'Escape' && setOpen(false)
-    document.addEventListener('pointerdown', away)
-    document.addEventListener('keydown', escape)
-    return () => {
-      document.removeEventListener('pointerdown', away)
-      document.removeEventListener('keydown', escape)
-    }
-  }, [open])
+  const [open, setOpen, box] = useDropdown()
 
   const link = (key, label) => (
     <li key={key}>
@@ -36,6 +21,8 @@ export default function UserMenu({ user, current, onSignOut }) {
       {open && (
         <div className="menu">
           <ul>
+            {link('profile', 'Profile')}
+            {link('friends', 'Friends')}
             {link('settings', 'Settings')}
           </ul>
           <ul className="menu-second">

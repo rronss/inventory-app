@@ -17,19 +17,34 @@ Open http://localhost:8200 and log in with the admin from your `.env`.
 
 - **Homepage:** what the app does, with **Sign in** and **Register** tabs on top.
 - **Home** (signed in; the **Crate** title, top left): the homepage, with buttons to the inventory and the overview.
-- **Inventory:** three tabs. **Overview**, totals and what needs reordering;
-  **Items**, one line per item, with a **New** button, a search box, a low-stock filter and, for admins, **Select**
-  to remove several at once (a pop-up asks first); **Movements**, every stock change newest first.
-- **Explore** (in the top bar): every public item, newest first, as cards with picture, stock status, quantity, and who added it and when.
+- **Inventory:** three tabs. **Items**, one line per item, with a **New** button, a search box, a low-stock filter
+  and, for admins, **Select** to remove several at once (a pop-up asks first); **Movements**, every stock change newest first;
+  **Overview**, totals and what needs reordering.
+- **Inbox** (in the top bar, with the number unread): three tabs. **Chats** (with a search bar and the total; **New** opens a form for the user and the first message) between two people, which nobody else can
+  read in the app. **Alerts**: tells you when an item you added runs low or out, when someone else
+  changes its stock, edits or removes it, and when your permissions change. Private information is never included.
+- **Inbox > Updates:** notes about the app (written in `backend/app/updates.py`) and messages admins post to everyone.
+- **Friends** (in the account menu): **Add friend** (by username), search people and add them; each friend has a **Chat** button; **Edit** ticks friends to
+  **Unfriend** or **Block**. Blocking ends the friendship and stops
+  requests and messages both ways; the other person is not told, and shared inventory stays visible.
+- **Friend requests:** send one from an item's card, a person's record or **Friends** (by username); accept or
+  decline it on **Friends** or in **Alerts**. Being friends shows nothing that was hidden.
+- **Explore** (in the top bar): a search bar, a filter list at the top right (**Recents**, newest first, the default;
+  **All items**, A to Z; **Only friends**; **My items**) and every public item, newest first, as cards with picture, stock status, quantity, and who added it and when.
   An item whose stock is private is left out.
 - **Item profile:** every item has an ID and its own page, laid out like a shop's product page: picture slideshow, stock in and
   out, product details, description and stock history (the history folds away). **Edit** opens a page to change the name, SKU, reorder level,
   description and images, with a separate Privacy section for admins.
-- **Profile icon** (right of the top bar): opens **Settings**, and below it **Admin** (admins) and **Log out**.
-- **Profile** (in the top bar): your record and the items you added.
-- **Settings:** two tabs, **Profile Settings** (rows for name, bio and photo) and **Privacy & Security** (rows for
+- **Profile icon** (right of the top bar): opens **Profile**, **Friends** and **Settings**, and below them **Admin** (admins) and
+  **Log out**.
+- **Profile:** your record and the items you added, as picture cards.
+- **Who can chat me** (Settings > Privacy & Security): **Everyone**, the default, or **Friends only**. With
+  **Friends only**, others are told so when they try; you can still write to them, but they cannot reply.
+- **Settings:** two tabs, **Profile Settings** (rows for bio and photo) and **Privacy & Security** (rows for
   password, email and username, and what others can see about you).
-- **People:** a person's record shows photo, name, username, role, bio and the items they added, so colleagues can
+- **Profile menu** (three lines, top right of every profile): on yours, Edit profile, Friends and Privacy; on someone
+  else's, Chat, the friend options and Block.
+- **People:** a person's record shows user ID, photo, username, role, bio, number of friends and the items they added, so colleagues can
   recognise them. Open it from a username in the history or, for admins, from **Admin > Users**.
 - **Admin** (admins only): two tabs, **Users** (who has an account) and **Staff** (add a staff account). On someone
   else's record an admin also sets their **Permissions** and reads their **Activity log**.
@@ -66,8 +81,13 @@ Open http://localhost:8200 and log in with the admin from your `.env`.
 | `PATCH /api/auth/me`, `POST /api/auth/password`, `POST /api/auth/email`, `GET`, `PUT` and `DELETE /api/auth/photo` | the logged-in user, for themselves |
 | `GET /api/users`, `POST /api/users`, `GET /api/users/{id}` | admin |
 | `PATCH /api/users/{id}/permissions`, `GET /api/users/{id}/activity` | admin |
-| `GET /api/people/{id}`, `.../photo`, `.../items` | logged in |
+| `GET /api/people`, `GET /api/people/{id}`, `.../photo`, `.../items` | logged in |
+| `GET /api/messages`, `GET` and `POST /api/messages/{person}`, `POST .../read` | logged in, own conversations only |
+| `GET /api/updates`, `POST /api/updates/read` | logged in |
+| `POST /api/updates`, `DELETE /api/updates/{id}` | admin |
+| `GET /api/friends`, `GET`, `POST` and `DELETE /api/friends/{person}`, `POST .../accept`, `PUT` and `DELETE .../block` | logged in, own friends only |
 | `GET /api/movements` (`?limit=`, `?before=`), `GET /api/explore` | logged in |
+| `GET /api/inbox`, `.../unread`, `POST /api/inbox/read`, `POST /api/inbox/{id}/read` | logged in, own alerts only |
 | `GET /api/items` (`?low=true`), `GET /api/items/{id}`, `GET /api/items/{id}/movements` | logged in |
 | `POST /api/items`, `POST /api/items/{id}/movements` | logged in, with that permission |
 | `DELETE /api/items/{id}` | admin |

@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session, joinedload
 
 from .activity import named, record
 from .db import get_db
+from .inbox import item_changed, item_removed, stock_moved
 from .models import ADMIN, Item, Movement, User
 from .privacy import can_see_history, can_see_stock, item_view
 from .schemas import ExploreItemOut, ItemEditIn, ItemIn, ItemOut, MovementIn, MovementOut, RecentMovementOut
@@ -65,7 +66,9 @@ def edit_item(item_id: int, body: ItemEditIn, db: Session = Depends(get_db), use
     for field, value in changes.items():
         setattr(item, field, value)
     if changed:
-        record(db, user.id, "item_edited", f"{named(item)}: {', '.join(changed).replace('_', ' ')}")
+        what = ", ".join(changed).replace("_", " ")
+        record(db, user.id, "item_edited", f"{named(item)}: {what}")
+        item_changed(db, item, user, what)
     db.commit()
     return item_view(item, user)
 
@@ -75,6 +78,7 @@ def remove_item(item_id: int, db: Session = Depends(get_db), user: User = Depend
     """Removes the item for good, with its pictures and its movements. There is no undo."""
     item = item_or_404(db, item_id)
     record(db, user.id, "item_removed", f"{named(item)}, SKU {item.sku}")
+    item_removed(db, item, user)
     db.execute(delete(Movement).where(Movement.item_id == item_id))
     db.delete(item)  # the pictures go with it
     db.commit()
@@ -83,8 +87,10 @@ def remove_item(item_id: int, db: Session = Depends(get_db), user: User = Depend
 @router.post("/{item_id}/movements", response_model=ItemOut)
 def move_stock(item_id: int, body: MovementIn, db: Session = Depends(get_db), user: User = Depends(may_move_stock)):
     # Not for private stock: "Not enough stock" would let anyone work out the quantity.
-    if not can_see_stock(item_or_404(db, item_id), user):
+    item = item_or_404(db, item_id)
+    if not can_see_stock(item, user):
         raise HTTPException(403, "The stock of this item is private")
+    was_low, was_empty = item.low_stock, item.quantity == 0
     # One conditional UPDATE, so two removals at the same moment cannot take the stock below zero.
     changed = db.execute(
         update(Item)
@@ -97,7 +103,9 @@ def move_stock(item_id: int, body: MovementIn, db: Session = Depends(get_db), us
     db.add(Movement(item_id=item_id, user_id=user.id, change=body.change, note=body.note))
     note = f": {body.note}" if body.note else ""
     action = "stock_in" if body.change > 0 else "stock_out"
-    record(db, user.id, action, f"{body.change:+d} {named(db.get(Item, item_id))}{note}")
+    moved = db.get(Item, item_id, populate_existing=True)  # with its new quantity
+    record(db, user.id, action, f"{body.change:+d} {named(moved)}{note}")
+    stock_moved(db, moved, user, body.change, was_low, was_empty)
     db.commit()
     return item_view(db.get(Item, item_id, populate_existing=True), user)
 

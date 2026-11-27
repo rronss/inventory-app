@@ -4,6 +4,7 @@ import { api } from './api.js'
 import Avatar from './Avatar.jsx'
 import EditProfile from './EditProfile.jsx'
 import Person from './Person.jsx'
+import ProfileMenu from './ProfileMenu.jsx'
 import SecuritySettings from './SecuritySettings.jsx'
 
 // "Profile" is your record; "Settings" is where you change it.
@@ -35,15 +36,11 @@ export default function Profile({ page, tab, user, onChanged, onExpired }) {
     <>
       <div className="page-head">
         <h1>{page === 'settings' ? 'Settings' : 'Profile'}</h1>
-        {page !== 'settings' && (
-          <a className="tool" href="#/settings">
-            Edit
-          </a>
-        )}
+        {page !== 'settings' && <ProfileMenu own />}
       </div>
 
       {page !== 'settings' ? (
-        <Person id={user.id} user={user} onExpired={onExpired} />
+        <Person id={user.id} user={user} onExpired={onExpired} inProfile />
       ) : (
         <>
           <div className="who">

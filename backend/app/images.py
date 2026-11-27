@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from .activity import named, record
 from .db import get_db
+from .inbox import item_changed
 from .items import item_or_404
 from .models import ItemImage, User
 from .privacy import item_view
@@ -66,6 +67,7 @@ def add_image(
     last = max((image.position for image in item.images), default=-1)
     item.images.append(ItemImage(content_type=content_type, data=data, position=last + 1))
     record(db, user.id, "image_added", named(item))
+    item_changed(db, item, user, "pictures")
     db.commit()
     return item_view(item, user)
 
@@ -82,6 +84,7 @@ def arrange_images(
         for image in item.images:
             image.position = body.image_ids.index(image.id)
         record(db, user.id, "image_reordered", named(item))
+        item_changed(db, item, user, "pictures")
         db.commit()
         db.expire(item, ["images"])  # read them again in their new order
     return item_view(item, user)
@@ -92,5 +95,6 @@ def delete_image(item_id: int, image_id: int, db: Session = Depends(get_db), use
     item = item_or_404(db, item_id)
     item.images.remove(_image_or_404(db, item_id, image_id))
     record(db, user.id, "image_removed", named(item))
+    item_changed(db, item, user, "pictures")
     db.commit()
     return item_view(item, user)

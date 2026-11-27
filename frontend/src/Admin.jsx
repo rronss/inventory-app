@@ -24,7 +24,7 @@ function Users({ handle }) {
             <a className="row" href={personLink(u.id)}>
               <Avatar user={u} small />
               <span>
-                {u.username} {u.name && <small>{u.name}</small>}
+                {u.username} {u.name && <small>{u.name}</small>} <small>ID {u.id}</small>
               </span>
               <span>
                 {u.role} <span aria-hidden="true">›</span>

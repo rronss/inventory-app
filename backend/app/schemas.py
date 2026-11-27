@@ -71,6 +71,7 @@ class MeOut(UserOut):
     """Your own account."""
 
     bio: str
+    chat_from: str
 
 
 class PersonOut(BaseModel):
@@ -86,12 +87,19 @@ class PersonOut(BaseModel):
     photo_version: int
 
 
+class PersonRecordOut(PersonOut):
+    """One person's record. How many friends they have, never who they are."""
+
+    friends: int
+
+
 class ProfileIn(BaseModel):
     """Fields left out stay as they are."""
 
     name: str | None = Field(default=None, max_length=80)
     username: Username | None = None
     bio: str | None = Field(default=None, max_length=500)
+    chat_from: Literal["everyone", "friends"] | None = None
 
 
 class EmailIn(BaseModel):
@@ -148,6 +156,85 @@ class ExploreItemOut(ItemOut):
     added_by: str | None
     added_by_photo_version: int | None
     created_at: datetime | None
+
+
+class NotificationOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    kind: str
+    text: str
+    item_id: int | None
+    person_id: int | None
+    is_read: bool
+    created_at: datetime
+
+
+class UnreadOut(BaseModel):
+    unread: int  # alerts
+    messages: int
+    updates: int
+
+
+class MessageIn(BaseModel):
+    text: str = Field(max_length=1000)
+
+    @field_validator("text")
+    @classmethod
+    def not_blank(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("a message needs some words")
+        return value
+
+
+class MessageOut(BaseModel):
+    id: int
+    text: str
+    mine: bool
+    created_at: datetime
+
+
+class FriendStatusOut(BaseModel):
+    status: Literal["none", "sent", "received", "friends", "blocked"]
+
+
+class FriendsOut(BaseModel):
+    friends: list[PersonOut]
+    incoming: list[PersonOut]
+    outgoing: list[PersonOut]
+    blocked: list[PersonOut]
+
+
+class UpdateIn(BaseModel):
+    title: str = Field(max_length=120)
+    text: str = Field(max_length=1000)
+
+    @field_validator("title", "text")
+    @classmethod
+    def not_blank(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("write a title and a message")
+        return value
+
+
+class UpdateOut(BaseModel):
+    id: int
+    kind: str
+    title: str
+    text: str
+    author: str | None
+    created_at: datetime
+    unread: bool
+
+
+class ConversationOut(BaseModel):
+    person: PersonOut
+    last_text: str
+    last_mine: bool
+    last_at: datetime
+    unread: int
 
 
 class MovementIn(BaseModel):
