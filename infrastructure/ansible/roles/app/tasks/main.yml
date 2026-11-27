@@ -1,0 +1,49 @@
+- name: Create the app folder
+  ansible.builtin.file:
+    path: "{{ app_dir }}"
+    state: directory
+    mode: "0750"
+
+- name: Write the Compose file
+  ansible.builtin.template:
+    src: compose.yml.j2
+    dest: "{{ app_dir }}/compose.yml"
+    mode: "0640"
+
+- name: Write the web server settings
+  ansible.builtin.template:
+    src: Caddyfile.j2
+    dest: "{{ app_dir }}/Caddyfile"
+    mode: "0644"
+  notify: Restart Caddy
+
+# Secrets are read on this computer, with your AWS credentials, and are never printed.
+- name: Write the backend's secrets
+  ansible.builtin.template:
+    src: env.j2
+    dest: "{{ app_dir }}/backend.env"
+    mode: "0600"
+  no_log: true
+  diff: false
+
+- name: Pull the images and start the app
+  community.docker.docker_compose_v2:
+    project_src: "{{ app_dir }}"
+    pull: always
+    remove_orphans: true
+    wait: true # until the containers report healthy
+    wait_timeout: 180
+
+- name: Apply new web server settings before checking
+  ansible.builtin.meta: flush_handlers
+
+# 401 means the request went through Caddy and nginx to the backend, which asks for a sign-in.
+- name: Check that the app answers
+  ansible.builtin.uri:
+    url: "{{ 'https://' ~ domain if domain else 'http://127.0.0.1' }}/api/items"
+    status_code: 401
+  register: answer
+  until: answer.status == 401
+  retries: 12
+  delay: 10
+  when: not ansible_check_mode

@@ -1,0 +1,15 @@
+# Systems Manager instead of SSH. The values in {{ }} come from Terraform: see infrastructure/README.md.
+ansible_connection: amazon.aws.aws_ssm
+ansible_aws_ssm_region: "{{ crate_region }}"
+ansible_aws_ssm_bucket_name: "{{ ssm_bucket }}"
+
+image_registry: ghcr.io/rronss
+image_tag: latest
+compose_version: v5.1.0
+
+# Parameter Store path of SECRET_KEY, ADMIN_EMAIL and ADMIN_PASSWORD
+parameter_path: /crate
+app_dir: /opt/crate
+
+# Without a domain there is no HTTPS, and passwords cross the internet unencrypted. Only for a short test.
+allow_http: false

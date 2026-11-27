@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import delete, select, update
 from sqlalchemy.orm import Session, joinedload
 
+from . import storage
 from .activity import named, record
 from .db import get_db
 from .inbox import item_changed, item_removed, stock_moved
@@ -80,8 +81,10 @@ def remove_item(item_id: int, db: Session = Depends(get_db), user: User = Depend
     record(db, user.id, "item_removed", f"{named(item)}, SKU {item.sku}")
     item_removed(db, item, user)
     db.execute(delete(Movement).where(Movement.item_id == item_id))
+    keys = [picture.s3_key for picture in item.images]
     db.delete(item)  # the pictures go with it
     db.commit()
+    storage.discard(*keys)
 
 
 @router.post("/{item_id}/movements", response_model=ItemOut)

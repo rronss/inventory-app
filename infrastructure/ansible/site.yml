@@ -1,0 +1,21 @@
+- name: Deploy Crate
+  hosts: crate
+  become: true
+
+  pre_tasks:
+    - name: Check that Terraform's values were passed in
+      ansible.builtin.assert:
+        that:
+          - picture_bucket is defined
+          - db_host is defined
+          - db_secret_arn is defined
+        fail_msg: "Run with -e @tf-outputs.json (see infrastructure/README.md)"
+
+    - name: Refuse to serve without HTTPS unless that was asked for
+      ansible.builtin.assert:
+        that: domain | length > 0 or allow_http | bool
+        fail_msg: "Set the domain in terraform.tfvars, or pass -e allow_http=true for a short test"
+
+  roles:
+    - docker
+    - app

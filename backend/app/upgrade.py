@@ -20,7 +20,8 @@ COLUMNS = {
         "created_at": "TIMESTAMP WITH TIME ZONE",  # unknown for what is already there
     },
     # all 0 at first, so pictures stay in the order they were added
-    "item_images": {"position": "INTEGER NOT NULL DEFAULT 0"},
+    "item_images": {"position": "INTEGER NOT NULL DEFAULT 0", "s3_key": "VARCHAR(100) NOT NULL DEFAULT ''"},
+    "user_photos": {"s3_key": "VARCHAR(100) NOT NULL DEFAULT ''"},
 }
 
 

@@ -1,0 +1,24 @@
+- name: Install Docker
+  ansible.builtin.dnf:
+    name: docker
+    state: present
+
+- name: Create the folder for Docker plugins
+  ansible.builtin.file:
+    path: /usr/local/lib/docker/cli-plugins
+    state: directory
+    mode: "0755"
+
+# Amazon Linux does not package Compose, so it comes from Docker's release, checked against its published sum.
+- name: Install Docker Compose
+  ansible.builtin.get_url:
+    url: "https://github.com/docker/compose/releases/download/{{ compose_version }}/docker-compose-linux-aarch64"
+    dest: /usr/local/lib/docker/cli-plugins/docker-compose
+    checksum: "sha256:https://github.com/docker/compose/releases/download/{{ compose_version }}/docker-compose-linux-aarch64.sha256"
+    mode: "0755"
+
+- name: Start Docker, now and after a restart
+  ansible.builtin.systemd_service:
+    name: docker
+    state: started
+    enabled: true

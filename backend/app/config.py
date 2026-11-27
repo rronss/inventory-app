@@ -1,6 +1,7 @@
 from functools import lru_cache
+from typing import Literal
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -14,6 +15,15 @@ class Settings(BaseSettings):
     ADMIN_EMAIL: str = ""
     ADMIN_PASSWORD: str = ""
     TOKEN_MINUTES: int = 60
+    # Where picture files are kept. With "s3", boto3 finds the credentials and region itself.
+    PICTURE_STORAGE: Literal["db", "s3"] = "db"
+    PICTURE_BUCKET: str = ""
+
+    @model_validator(mode="after")
+    def bucket_named(self):
+        if self.PICTURE_STORAGE == "s3" and not self.PICTURE_BUCKET:
+            raise ValueError("PICTURE_STORAGE=s3 needs PICTURE_BUCKET")
+        return self
 
 
 @lru_cache

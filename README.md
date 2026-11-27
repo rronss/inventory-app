@@ -2,7 +2,7 @@
 
 A small stock-keeping app: log in, see what is in stock, record stock coming in and going out, spot what needs
 reordering, and keep a page for each item. FastAPI, PostgreSQL and React. Accounts and inventory live in the
-database.
+database; picture files can live in S3 instead.
 
 ## Run it
 
@@ -56,7 +56,7 @@ Open http://localhost:8200 and log in with the admin from your `.env`.
 - Every account has a unique username, which is what other people see. Email addresses are used to sign in
   and are never shown or sent back by the API. You can sign in with the username or the email.
 - The first admin's username is `admin`.
-- An item can have a description and up to 5 images (PNG, JPEG or WebP, 2 MB each, kept in the database), shown as a
+- An item can have a description and up to 5 images (PNG, JPEG or WebP, 2 MB each), shown as a
   slideshow. Those allowed to edit items can change them and drag them into order; the first is the main picture.
 - A person's record (name, username, role, bio, photo, items added) is visible to anyone signed in.
   Emails never are. Items from before creators were recorded belong to the first admin.
@@ -95,6 +95,19 @@ Open http://localhost:8200 and log in with the admin from your `.env`.
 | `PATCH /api/items/{id}` (name, SKU, reorder level, description; `stock_private` and `history_private` admin only), `POST /api/items/{id}/images`, `PUT .../images/order`, `DELETE /api/items/{id}/images/{image}` | logged in, with permission to edit items |
 | `GET /api/items/{id}/images/{image}` | logged in |
 
+## Where pictures are kept
+
+Item pictures and profile photos are kept in the database unless you set:
+
+```bash
+PICTURE_STORAGE=s3
+PICTURE_BUCKET=your-private-bucket
+```
+
+The backend then writes the files to that bucket and passes them through to signed-in users, so the bucket needs no
+public access. It needs permission to get, put and delete objects in it (on EC2, through the server's role; no keys
+in `.env`). Pictures saved before the switch stay in the database and are still shown.
+
 ## Develop
 
 ```bash
@@ -120,6 +133,11 @@ set -a && . ./.env && set +a && python3 sample-data/load.py
 ```
 
 The pictures are drawn by `sample-data/draw.py` (needs Pillow).
+
+## Deploy
+
+[infrastructure/](infrastructure/README.md) holds Terraform (AWS resources) and Ansible (server setup and
+deployment). It has not been applied yet.
 
 ## CI
 

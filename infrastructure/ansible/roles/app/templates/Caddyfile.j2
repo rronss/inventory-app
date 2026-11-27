@@ -1,0 +1,4 @@
+# {{ ansible_managed }}
+{{ domain if domain else ':80' }} {
+	reverse_proxy frontend:8080
+}

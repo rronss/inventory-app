@@ -1,7 +1,8 @@
-"""A few pictures per item, kept in the database so there is nothing else to back up or mount."""
+"""A few pictures per item. storage.py decides whether the files are kept in the database or in S3."""
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy.orm import Session
 
+from . import storage
 from .activity import named, record
 from .db import get_db
 from .inbox import item_changed
@@ -48,7 +49,7 @@ def _image_or_404(db: Session, item_id: int, image_id: int) -> ItemImage:
 def get_image(item_id: int, image_id: int, db: Session = Depends(get_db)):
     image = _image_or_404(db, item_id, image_id)
     headers = {"X-Content-Type-Options": "nosniff", "Cache-Control": "no-store"}
-    return Response(image.data, media_type=image.content_type, headers=headers)
+    return Response(storage.read(image), media_type=image.content_type, headers=headers)
 
 
 @router.post("", response_model=ItemOut, status_code=201)
@@ -65,7 +66,9 @@ def add_image(
     if len(item.images) >= MAX_IMAGES:
         raise HTTPException(409, f"An item can have {MAX_IMAGES} images")
     last = max((image.position for image in item.images), default=-1)
-    item.images.append(ItemImage(content_type=content_type, data=data, position=last + 1))
+    picture = ItemImage(content_type=content_type, position=last + 1)
+    storage.store(picture, f"items/{item.id}", data, content_type)
+    item.images.append(picture)
     record(db, user.id, "image_added", named(item))
     item_changed(db, item, user, "pictures")
     db.commit()
@@ -93,8 +96,11 @@ def arrange_images(
 @router.delete("/{image_id}", response_model=ItemOut)
 def delete_image(item_id: int, image_id: int, db: Session = Depends(get_db), user: User = Depends(may_edit_items)):
     item = item_or_404(db, item_id)
-    item.images.remove(_image_or_404(db, item_id, image_id))
+    picture = _image_or_404(db, item_id, image_id)
+    key = picture.s3_key
+    item.images.remove(picture)
     record(db, user.id, "image_removed", named(item))
     item_changed(db, item, user, "pictures")
     db.commit()
+    storage.discard(key)
     return item_view(item, user)

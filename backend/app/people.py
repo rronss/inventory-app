@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
+from . import storage
 from .db import get_db
 from .models import Friendship, Item, User, UserPhoto
 from .privacy import item_view
@@ -42,7 +43,7 @@ def photo(person_id: int, db: Session = Depends(get_db)):
     if found is None:
         raise HTTPException(404, "No photo")
     headers = {"X-Content-Type-Options": "nosniff", "Cache-Control": "no-store"}
-    return Response(found.data, media_type=found.content_type, headers=headers)
+    return Response(storage.read(found), media_type=found.content_type, headers=headers)
 
 
 @router.get("/{person_id}/items", response_model=list[ItemOut])

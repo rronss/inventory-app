@@ -7,3 +7,10 @@ __pycache__/
 node_modules/
 dist/
 .DS_Store
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfplan
+tfplan
+.terraform/
+infrastructure/ansible/tf-outputs.json

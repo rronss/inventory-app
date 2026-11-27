@@ -1,0 +1,13 @@
+# Finds the running server by the tag Terraform gives it.
+plugin: amazon.aws.aws_ec2
+regions:
+  - us-east-1
+filters:
+  tag:Project: crate
+  instance-state-name: running
+hostnames:
+  - instance-id
+compose:
+  ansible_host: instance_id
+groups:
+  crate: true

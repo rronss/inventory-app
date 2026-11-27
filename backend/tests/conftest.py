@@ -7,6 +7,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 os.environ.setdefault("SECRET_KEY", "test-only-key-that-is-long-enough-0123456789")
+os.environ["PICTURE_STORAGE"] = "db"  # never a real bucket, whatever the shell has set
 
 from app.db import Base, get_db  # noqa: E402
 from app.main import app  # noqa: E402

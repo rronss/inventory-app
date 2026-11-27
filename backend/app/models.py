@@ -44,7 +44,9 @@ class UserPhoto(Base):
 
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), primary_key=True)
     content_type: Mapped[str] = mapped_column(String(20))
+    # Either the bytes are here, or they are in S3 under s3_key and this is empty (see storage.py).
     data: Mapped[bytes] = mapped_column(LargeBinary, deferred=True)
+    s3_key: Mapped[str] = mapped_column(String(100), default="")
 
 
 class Activity(Base):
@@ -167,6 +169,7 @@ class ItemImage(Base):
     content_type: Mapped[str] = mapped_column(String(20))
     data: Mapped[bytes] = mapped_column(LargeBinary, deferred=True)
     position: Mapped[int] = mapped_column(default=0)  # the lowest is the main picture
+    s3_key: Mapped[str] = mapped_column(String(100), default="")  # set when the bytes are in S3, not in data
 
 
 class Movement(Base):

@@ -1,0 +1,39 @@
+# {{ ansible_managed }}
+name: crate
+
+x-service: &service
+  restart: unless-stopped
+  logging:
+    options:
+      max-size: 10m
+      max-file: "3"
+
+services:
+  caddy:
+    <<: *service
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data # certificates
+      - caddy_config:/config
+    depends_on:
+      - frontend
+
+  frontend:
+    <<: *service
+    image: {{ image_registry }}/inventory-app-frontend:{{ image_tag }}
+    depends_on:
+      - backend
+
+  backend:
+    <<: *service
+    image: {{ image_registry }}/inventory-app-backend:{{ image_tag }}
+    env_file:
+      - backend.env
+
+volumes:
+  caddy_data:
+  caddy_config:

@@ -20,6 +20,9 @@ services:
       SECRET_KEY: ${SECRET_KEY:?set it in .env}
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      PICTURE_STORAGE: ${PICTURE_STORAGE:-db}
+      PICTURE_BUCKET: ${PICTURE_BUCKET:-}
+      AWS_DEFAULT_REGION: ${AWS_DEFAULT_REGION:-us-east-1}
     depends_on:
       db:
         condition: service_healthy

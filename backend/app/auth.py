@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from . import storage
 from .activity import record
 from .db import get_db
 from .images import image_type, uploaded_bytes
@@ -102,7 +103,7 @@ def get_photo(db: Session = Depends(get_db), user: User = Depends(current_user))
     if photo is None:
         raise HTTPException(404, "You have no photo")
     headers = {"X-Content-Type-Options": "nosniff", "Cache-Control": "no-store"}
-    return Response(photo.data, media_type=photo.content_type, headers=headers)
+    return Response(storage.read(photo), media_type=photo.content_type, headers=headers)
 
 
 @router.put("/auth/photo", response_model=MeOut)
@@ -112,21 +113,28 @@ def put_photo(
     content_type = image_type(data)
     if content_type is None:
         raise HTTPException(415, "The image must be a PNG, JPEG or WebP file")
-    db.merge(UserPhoto(user_id=user.id, content_type=content_type, data=data))
+    photo = db.get(UserPhoto, user.id) or UserPhoto(user_id=user.id)
+    old_key = photo.s3_key
+    photo.content_type = content_type
+    storage.store(photo, f"people/{user.id}", data, content_type)
+    db.add(photo)
     user.photo_version += 1
     record(db, user.id, "profile_changed", "photo")
     db.commit()
+    storage.discard(old_key)
     return user
 
 
 @router.delete("/auth/photo", response_model=MeOut)
 def delete_photo(db: Session = Depends(get_db), user: User = Depends(current_user)):
     photo = db.get(UserPhoto, user.id)
+    key = photo.s3_key if photo else ""
     if photo is not None:
         db.delete(photo)
     user.photo_version = 0
     record(db, user.id, "profile_changed", "photo removed")
     db.commit()
+    storage.discard(key)
     return user
 
 
