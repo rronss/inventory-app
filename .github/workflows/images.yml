@@ -35,7 +35,7 @@ jobs:
       IMAGE: ghcr.io/${{ github.repository_owner }}/inventory-app-${{ matrix.part }}
       COMMIT: ${{ github.event.workflow_run.head_sha }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
         with:
           ref: ${{ github.event.workflow_run.head_sha }} # exactly what `ci` tested
           persist-credentials: false
