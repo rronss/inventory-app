@@ -4,6 +4,8 @@ A small stock-keeping app: log in, see what is in stock, record stock coming in 
 reordering, and keep a page for each item. FastAPI, PostgreSQL and React. Accounts and inventory live in the
 database; picture files can live in S3 instead.
 
+**[Run it](#run-it)** · **[Pages](#pages)** · **[Rules](#rules-the-app-enforces)** · **[API](#api)** · **[Develop](#develop)** · **[Deploy](#deploy)** · **[CI](#ci)**
+
 ## Run it
 
 There are two Compose files: `docker-compose.yml` for **development** (builds the source, runs its own database) and
@@ -17,6 +19,9 @@ docker compose up --build
 Open http://localhost:8200 and log in with the admin from your `.env`.
 
 ## Pages
+
+<details>
+<summary>Show every page</summary>
 
 - **Homepage:** what the app does, with **Sign in** and **Register** tabs on top.
 - **Home** (signed in; the **Crate** title, top left): the homepage, with buttons to the inventory and the overview.
@@ -53,7 +58,12 @@ Open http://localhost:8200 and log in with the admin from your `.env`.
 - **Admin** (admins only): two tabs, **Users** (who has an account) and **Staff** (add a staff account). On someone
   else's record an admin also sets their **Permissions** and reads their **Activity log**.
 
+</details>
+
 ## Rules the app enforces
+
+<details>
+<summary>Show the rules</summary>
 
 - Anyone can register. A registered account is always staff, and can change stock and edit only the items it added;
   an admin can lift that under **Permissions**. The first admin comes from `.env`.
@@ -79,7 +89,12 @@ Open http://localhost:8200 and log in with the admin from your `.env`.
 - An item is "low" when its quantity is at or below its reorder level.
 - Every movement is recorded with who made it.
 
+</details>
+
 ## API
+
+<details>
+<summary>Show the endpoints</summary>
 
 | Method and path | Who |
 |---|---|
@@ -100,6 +115,8 @@ Open http://localhost:8200 and log in with the admin from your `.env`.
 | `DELETE /api/items/{id}` | admin |
 | `PATCH /api/items/{id}` (name, SKU, reorder level, description; `stock_private` and `history_private` admin only), `POST /api/items/{id}/images`, `PUT .../images/order`, `DELETE /api/items/{id}/images/{image}` | logged in, with permission to edit items |
 | `GET /api/items/{id}/images/{image}` | logged in |
+
+</details>
 
 ## Where pictures are kept
 
