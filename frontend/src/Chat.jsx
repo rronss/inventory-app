@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from 'react'
 
 import { api, getToken } from './api.js'
 
+// What the assistant is called. One place, so it is easy to change.
+const NAME = 'Crate Helper'
+
 const IDEAS = ['How do I add an item?', "Who can see an item's stock?", 'How do friends and blocking work?']
 
 // Sends the conversation and hands each piece of the answer to onText as it arrives. The server answers with
@@ -41,6 +44,16 @@ async function ask(messages, signal, onText) {
     }
   }
   if (!finished) throw new Error('The answer was cut off. Please try again.')
+}
+
+// The usual "AI" mark: a big four-pointed sparkle with small ones beside it.
+function Sparkle({ size = 24 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" />
+      <path d="M20 3v4M22 5h-4M4 17v2M5 18H3" />
+    </svg>
+  )
 }
 
 // The help assistant: a round button at the bottom right that opens a small chat. It only knows how Crate works.
@@ -112,8 +125,16 @@ export default function Chat({ onExpired }) {
       {open && (
         <section className="chat-panel" aria-label="Help assistant">
           <header>
-            <strong>Crate help</strong>
-            <span>
+            <span className="chat-title">
+              <span className="chat-avatar">
+                <Sparkle size={18} />
+              </span>
+              <span>
+                <strong>{NAME}</strong>
+                <small>Answers about using Crate</small>
+              </span>
+            </span>
+            <span className="chat-actions">
               {messages.length > 0 && (
                 <button type="button" className="link" onClick={startOver}>
                   New chat
@@ -127,7 +148,7 @@ export default function Chat({ onExpired }) {
           <div className="chat-log" role="log" aria-live="polite">
             {messages.length === 0 && (
               <div className="chat-hello">
-                <p>Hi! Ask me how anything in Crate works. I can't see your items or messages, only explain the app.</p>
+                <p>Hi, I'm {NAME}! Ask me how anything in Crate works. I can't see your items or messages, only explain the app.</p>
                 {IDEAS.map((idea) => (
                   <button key={idea} type="button" className="chat-idea" onClick={() => send(idea)}>
                     {idea}
@@ -170,9 +191,13 @@ export default function Chat({ onExpired }) {
         aria-expanded={open}
         onClick={() => setOpen(!open)}
       >
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-          <path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12Z" strokeLinejoin="round" />
-        </svg>
+        {open ? (
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true">
+            <path d="M6 6l12 12M18 6 6 18" />
+          </svg>
+        ) : (
+          <Sparkle />
+        )}
       </button>
     </>
   )

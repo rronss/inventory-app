@@ -1,3 +1,5 @@
+import { SOON } from './soon.js'
+
 const FEATURES = [
   ['Know what you have', 'Every item with its quantity, and a clear mark on what needs reordering.'],
   ['See each item', 'Every item has its own page with pictures, a description and its stock.'],
@@ -20,6 +22,10 @@ export default function Hero({ children }) {
             <p className="hint">{text}</p>
           </article>
         ))}
+        <article className="card soon">
+          <h2>{SOON.title}</h2>
+          <p className="hint">{SOON.text}</p>
+        </article>
       </section>
     </>
   )

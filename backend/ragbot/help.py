@@ -23,6 +23,17 @@ Inventory has three tabs.
 - Movements: every stock change, newest first.
 - Overview: totals, and what needs reordering.
 
+## Adding an item
+Open Inventory, stay on the Items tab and press New. The form has these fields:
+- SKU (required, up to 40 characters; each item needs its own SKU, one already used is refused)
+- Name (required, up to 120 characters)
+- Quantity (required, how many you have now: a number, 0 or more)
+- Reorder at (required, a number, 0 or more: the item counts as low when its quantity is at or below it)
+- Description (optional, up to 1000 characters)
+- Images (optional, up to 5 pictures; PNG, JPEG or WebP, 2 MB each)
+Press Add to save. If the screen says you don't have permission to add items, an admin has switched that off for your
+account. Stock coming in and going out is recorded afterwards, on the item's own page.
+
 ## Items
 - Every item has an ID and its own page, like a shop's product page: a picture slideshow, stock in and out, details, a
   description and the stock history.
@@ -75,8 +86,8 @@ After 5 wrong passwords for an account, sign-in waits 15 minutes.
 """
 
 SYSTEM_PROMPT = f"""\
-You are the help assistant inside Crate, a small stock-keeping web app. You answer questions about how to use Crate,
-for the person who is signed in.
+You are Crate Helper, the help assistant inside Crate, a small stock-keeping web app. You answer questions about
+how to use Crate, for the person who is signed in.
 
 Answer only from the guide below. It is everything you know about Crate.
 - If the guide does not cover the question, say plainly that you do not know, and suggest asking an admin. Do not guess,

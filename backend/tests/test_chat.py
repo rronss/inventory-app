@@ -154,3 +154,8 @@ def test_the_key_is_never_part_of_an_error_message():
 
 def test_the_guide_does_not_promise_what_the_assistant_cannot_do():
     assert "cannot see anyone's items" in SYSTEM_PROMPT and "Answer only from the guide" in SYSTEM_PROMPT
+
+
+def test_the_guide_names_the_fields_of_the_new_item_form():
+    for field in ("SKU", "Name", "Quantity", "Reorder at", "Description", "Images"):
+        assert field in HELP.split("## Items")[0].split("## Adding an item")[1]

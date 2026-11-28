@@ -1,4 +1,5 @@
 import { itemLink } from './itemControls.jsx'
+import { SOON } from './soon.js'
 import useItems from './useItems.js'
 
 // The inventory at a glance.
@@ -38,6 +39,10 @@ export default function Dashboard({ onExpired }) {
             </li>
           ))}
         </ul>
+      </section>
+      <section className="card">
+        <h2>{SOON.title}</h2>
+        <p>{SOON.text}</p>
       </section>
     </>
   )
