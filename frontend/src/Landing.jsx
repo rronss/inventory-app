@@ -3,14 +3,15 @@ import Hero from './Hero.jsx'
 import Login from './Login.jsx'
 import Register from './Register.jsx'
 
+// Register has its own link from Sign in and from the hero button, so it isn't a top tab too.
 const TABS = [
   ['', 'Home'],
   ['signin', 'Sign in'],
-  ['register', 'Register'],
 ]
-// The signed-out site: a bar of tabs on top, and the chosen tab below it.
+const PAGES = ['', 'signin', 'register']
+// The signed-out site: a bar of tabs on top, and the chosen page below it.
 export default function Landing({ page, onSignedIn }) {
-  const active = TABS.some(([key]) => key === page) ? page : ''
+  const active = PAGES.includes(page) ? page : ''
 
   return (
     <>
