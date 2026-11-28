@@ -3,6 +3,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from sqlalchemy import select
 
+from ragbot.router import router as chat_router
+
 from . import auth, friends, images, inbox, items, messages, people, updates
 from .config import get_settings
 from .db import Base, get_engine, new_session
@@ -43,6 +45,7 @@ app.include_router(inbox.router)
 app.include_router(messages.router)
 app.include_router(friends.router)
 app.include_router(updates.router)
+app.include_router(chat_router)
 
 
 @app.get("/health")

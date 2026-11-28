@@ -57,6 +57,10 @@ Open http://localhost:8200 and log in with the admin from your `.env`.
   recognise them. Open it from a username in the history or, for admins, from **Admin > Users**.
 - **Admin** (admins only): two tabs, **Users** (who has an account) and **Staff** (add a staff account). On someone
   else's record an admin also sets their **Permissions** and reads their **Activity log**.
+- **Help assistant** (the round button at the bottom right, when signed in): a small chat that answers questions about
+  using Crate. It knows only a written guide to the app, cannot see anyone's items or messages, and the conversation
+  is not stored (reloading the page clears it). Only there when the server has an Anthropic key; see
+  [Help assistant](#help-assistant).
 
 </details>
 
@@ -115,6 +119,7 @@ Open http://localhost:8200 and log in with the admin from your `.env`.
 | `DELETE /api/items/{id}` | admin |
 | `PATCH /api/items/{id}` (name, SKU, reorder level, description; `stock_private` and `history_private` admin only), `POST /api/items/{id}/images`, `PUT .../images/order`, `DELETE /api/items/{id}/images/{image}` | logged in, with permission to edit items |
 | `GET /api/items/{id}/images/{image}` | logged in |
+| `GET /api/chat/config`, `POST /api/chat` (a stream of `data:` lines) | logged in |
 
 </details>
 
@@ -130,6 +135,22 @@ PICTURE_BUCKET=your-private-bucket
 The backend then writes the files to that bucket and passes them through to signed-in users, so the bucket needs no
 public access. It needs permission to get, put and delete objects in it (on EC2, through the server's role; no keys
 in `.env`). Pictures saved before the switch stay in the database and are still shown.
+
+## Help assistant
+
+The round button at the bottom right answers questions about how to use Crate. It is off until the server has a key:
+
+```bash
+ANTHROPIC_API_KEY=your-key
+```
+
+- It answers from one written guide, [`backend/ragbot/help.py`](backend/ragbot/help.py). Change the guide when the app
+  changes: what is not in it, the assistant says it does not know.
+- What leaves the server for the model is that guide and the last 10 lines of the chat the browser sends. No item,
+  stock, message, name or email is included, and nothing is stored on the server.
+- Each person gets `CHAT_MESSAGES_PER_DAY` questions a day (50 by default). `CHAT_MODEL` picks the model
+  (`claude-haiku-5-5` by default, the cheap one).
+- On AWS, `infrastructure/add-secrets.sh` asks for the key and `deploy.sh` turns the assistant on when it is stored.
 
 ## Develop
 

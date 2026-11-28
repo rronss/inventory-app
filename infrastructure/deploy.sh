@@ -18,6 +18,11 @@ if ! aws ssm get-parameter --region "$REGION" --name /crate/TURNSTILE_SECRET_KEY
   echo "No Turnstile keys stored: deploying without the bot check"
   extra=(-e bot_check=false)
 fi
+if aws ssm get-parameter --region "$REGION" --name /crate/ANTHROPIC_API_KEY >/dev/null 2>&1; then
+  extra+=(-e chat=true)
+else
+  echo "No Anthropic key stored: deploying without the help assistant"
+fi
 
 if [[ $(uname) == Darwin ]]; then # or Ansible's workers crash on macOS
   export OS_ACTIVITY_MODE=disable OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES no_proxy='*'

@@ -36,4 +36,7 @@ if [[ -n $site ]]; then
   store TURNSTILE_SITE_KEY "$site"
   store TURNSTILE_SECRET_KEY "$secret"
 fi
+echo "Anthropic API key for the help assistant (press Enter to skip)"
+read -rsp "API key: " anthropic; echo
+[[ -z $anthropic ]] || store ANTHROPIC_API_KEY "$anthropic"
 echo "Done."

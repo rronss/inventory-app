@@ -10,6 +10,7 @@ os.environ.setdefault("SECRET_KEY", "test-only-key-that-is-long-enough-012345678
 os.environ["PICTURE_STORAGE"] = "db"  # never a real bucket, whatever the shell has set
 os.environ["TURNSTILE_SITE_KEY"] = os.environ["TURNSTILE_SECRET_KEY"] = ""  # nor a real bot check
 os.environ["TRUSTED_PROXIES"] = "0"
+os.environ["ANTHROPIC_API_KEY"] = ""  # never a real key; the assistant tests use a stand-in
 
 from app.db import Base, get_db  # noqa: E402
 from app.main import app  # noqa: E402

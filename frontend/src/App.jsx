@@ -13,6 +13,7 @@ import Inventory from './Inventory.jsx'
 import Item from './Item.jsx'
 import ItemEdit from './ItemEdit.jsx'
 import Movements from './Movements.jsx'
+import Chat from './Chat.jsx'
 import Person from './Person.jsx'
 import Landing from './Landing.jsx'
 import Profile from './Profile.jsx'
@@ -187,6 +188,7 @@ export default function App() {
         {active === 'friends' && <FriendsPage {...props} />}
         {person && <Person key={tab} id={tab} {...props} />}
       </main>
+      <Chat onExpired={logOut} />
     </>
   )
 }

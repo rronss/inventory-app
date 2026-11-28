@@ -27,6 +27,10 @@ class Settings(BaseSettings):
     # Cloudflare Turnstile on sign-up. Both or neither.
     TURNSTILE_SITE_KEY: str = ""
     TURNSTILE_SECRET_KEY: str = ""
+    # The help assistant (backend/ragbot). Off until there is a key.
+    ANTHROPIC_API_KEY: str = ""
+    CHAT_MODEL: str = "claude-haiku-5-5"
+    CHAT_MESSAGES_PER_DAY: int = 50  # per person
 
     @model_validator(mode="after")
     def bucket_named(self):
