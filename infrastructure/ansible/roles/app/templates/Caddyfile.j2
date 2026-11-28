@@ -6,5 +6,6 @@
 		X-Frame-Options "DENY"
 		Referrer-Policy "strict-origin-when-cross-origin"
 	}
+	log # captured by `docker logs`; lost on restart otherwise
 	reverse_proxy frontend:8080
 }
